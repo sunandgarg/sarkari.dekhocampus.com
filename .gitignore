@@ -25,6 +25,7 @@ reports/legacy-asset-*.json
 # its deployment path. These inherited workspace folders remain local because
 # they include unrelated backend, research, export, and infrastructure data.
 .env
+.dockerignore
 api/
 backend/
 data/
