@@ -1,0 +1,56 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+test-results/
+playwright-report/
+blob-report/
+*.local
+work/
+backend/storage/
+supabase/.temp/
+reports/legacy-csv-mapped/
+reports/legacy-csv-*.json
+reports/legacy-asset-*.json
+
+# The public Sarkari repository intentionally contains only the frontend and
+# its deployment path. These inherited workspace folders remain local because
+# they include unrelated backend, research, export, and infrastructure data.
+.env
+api/
+backend/
+data/
+db-export/
+docs/
+functions/
+infra/
+reports/
+supabase/
+workers/
+.github/workflows/backup-digitalocean.yml
+.github/workflows/deploy-aws-lightsail.yml
+.github/workflows/deploy-cloudflare-pages.yml
+scripts/*
+!scripts/apply-site-metadata.ts
+!scripts/check-no-large-dashes.mjs
+!scripts/deploy-prod.sh
+!scripts/generate-sitemap.ts
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

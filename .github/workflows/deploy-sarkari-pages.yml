@@ -1,0 +1,63 @@
+name: Deploy Sarkari DekhoCampus frontend
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sarkari-dekhocampus-production
+  cancel-in-progress: false
+
+jobs:
+  verify-and-deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify and build the Sarkari portal
+        env:
+          VITE_API_URL: https://aws-origin.dekhocampus.com
+          VITE_AWS_API_URL: https://aws-origin.dekhocampus.com
+          VITE_MEDIA_BASE_URL: https://aws-origin.dekhocampus.com/storage/v1/object/public
+          SITEMAP_API_URL: https://aws-origin.dekhocampus.com
+          SITEMAP_BASE_URL: https://sarkari.dekhocampus.com
+        run: |
+          npm ci
+          npm test
+          npm run lint
+          npm run build
+          rm -f dist/_worker.js
+          test ! -e dist/_worker.js
+          grep -Fq "https://sarkari.dekhocampus.com" dist/sitemap.xml
+          grep -Fq "Sitemap: https://sarkari.dekhocampus.com/sitemap.xml" dist/robots.txt
+          ! grep -R -Fq "127.0.0.1:8787" dist/assets
+
+      - name: Publish to the dedicated Cloudflare Pages project
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=sarkari-dekhocampus --branch=main --commit-dirty=true
+
+      - name: Verify the immutable deployment marker
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          for attempt in $(seq 1 60); do
+            BUILD_ID=$(curl --fail --silent --show-error --max-time 15 \
+              https://sarkari-dekhocampus.pages.dev/version.json \
+              | jq -r '.buildId' || true)
+            if [ "$BUILD_ID" = "$EXPECTED_SHA" ]; then exit 0; fi
+            sleep 5
+          done
+          echo "The Sarkari Pages deployment did not publish the expected build." >&2
+          exit 1

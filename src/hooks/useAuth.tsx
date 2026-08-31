@@ -1,0 +1,132 @@
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from "react";
+import { Session, User } from "@/integrations/backend/client";
+import { backendClient } from "@/integrations/backend/client";
+import { AppRole, can, canAccessModule, Module, Action } from "@/lib/rbac";
+
+interface AuthContextType {
+  session: Session | null;
+  user: User | null;
+  isAdmin: boolean;
+  roles: AppRole[];
+  isLoading: boolean;
+  can: (module: Module, action: Action) => boolean;
+  canAccess: (module: Module) => boolean;
+  signOut: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType>({
+  session: null,
+  user: null,
+  isAdmin: false,
+  roles: [],
+  isLoading: true,
+  can: () => false,
+  canAccess: () => false,
+  signOut: async () => {},
+});
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [roles, setRoles] = useState<AppRole[]>([]);
+  const [grants, setGrants] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(true);
+  const loadedUserId = useRef<string | null>(null);
+
+  const loadRoles = useCallback(async (user: User) => {
+    try {
+      const [rolesRes, permsRes] = await Promise.all([
+        backendClient.from("user_roles").select("role").eq("user_id", user.id),
+        (backendClient as any)
+          .from("user_permissions")
+          .select("module,action,allow,resource,can_view,can_create,can_edit,can_delete,can_publish")
+          .eq("user_id", user.id),
+      ]);
+      const dbRoles = (rolesRes.data ?? []).map((r: any) => r.role as AppRole);
+      // Security: admin access must come from database-backed roles or explicit
+      // permissions. Do not grant admin from hardcoded frontend emails/phones.
+      const all = dbRoles;
+      const g = new Set<string>();
+      (permsRes.data ?? []).forEach((p: any) => {
+        // Legacy module/action/allow rows
+        if (p.allow && p.module && p.action) g.add(`${p.module}:${p.action}`);
+        // Resource-based rows
+        if (p.resource) {
+          if (p.can_view) g.add(`${p.resource}:view`);
+          if (p.can_create) g.add(`${p.resource}:create`);
+          if (p.can_edit) { g.add(`${p.resource}:edit`); g.add(`${p.resource}:edit_own`); }
+          if (p.can_delete) g.add(`${p.resource}:delete`);
+          if (p.can_publish) g.add(`${p.resource}:publish`);
+        }
+      });
+      setRoles(all);
+      setGrants(g);
+      setIsAdmin(all.includes("admin"));
+    } catch {
+      setRoles([]); setGrants(new Set()); setIsAdmin(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const { data: { subscription } } = backendClient.auth.onAuthStateChange(
+      (event, newSession) => {
+        setSession(newSession);
+        if (newSession?.user) {
+          // TOKEN_REFRESHED commonly fires when a background tab becomes visible.
+          // Roles are unchanged, so keep the protected route mounted and merely
+          // accept the refreshed session. Only gate the UI for a genuinely new user.
+          const needsRoleLoad = loadedUserId.current !== newSession.user.id || event === "SIGNED_IN";
+          if (needsRoleLoad) {
+            if (!loadedUserId.current) setIsLoading(true);
+            setTimeout(() => {
+              loadRoles(newSession.user).finally(() => {
+                loadedUserId.current = newSession.user.id;
+                setIsLoading(false);
+              });
+            }, 0);
+          }
+        } else {
+          loadedUserId.current = null;
+          setRoles([]); setGrants(new Set()); setIsAdmin(false);
+          setIsLoading(false);
+        }
+      }
+    );
+    backendClient.auth.getSession().then(async ({ data: { session: initialSession } }) => {
+      setSession(initialSession);
+      if (initialSession?.user) {
+        await loadRoles(initialSession.user);
+        loadedUserId.current = initialSession.user.id;
+      }
+      else { setRoles([]); setIsAdmin(false); }
+      setIsLoading(false);
+    });
+    return () => subscription.unsubscribe();
+  }, [loadRoles]);
+
+
+  const signOut = async () => {
+    await backendClient.auth.signOut();
+    loadedUserId.current = null;
+    setSession(null); setIsAdmin(false); setRoles([]);
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        session,
+        user: session?.user ?? null,
+        isAdmin,
+        roles,
+        isLoading,
+        can: (m, a) => isAdmin || grants.has(`${m}:${a}`) || can(roles, m, a),
+        canAccess: (m) => isAdmin || Array.from(grants).some(k => k.startsWith(`${m}:`)) || canAccessModule(roles, m),
+        signOut,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export const useAuth = () => useContext(AuthContext);
