@@ -14,6 +14,12 @@ if [ "$CURRENT_BRANCH" != "$BRANCH" ]; then
   exit 1
 fi
 
+ORIGIN_URL="$(git remote get-url origin 2>/dev/null || true)"
+case "$ORIGIN_URL" in
+  https://github.com/sunandgarg/sarkari.dekhocampus.com.git|git@github.com:sunandgarg/sarkari.dekhocampus.com.git) ;;
+  *) echo "Refusing to deploy from unexpected origin: ${ORIGIN_URL:-missing}"; exit 1 ;;
+esac
+
 if ! git diff --quiet || ! git diff --cached --quiet; then
   echo "Tracked changes are not committed. Commit the intended release before deploying."
   exit 1

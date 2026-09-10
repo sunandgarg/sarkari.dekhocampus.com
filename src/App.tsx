@@ -24,6 +24,7 @@ const AdminAuthors = lazyRetry(() => import("./pages/AdminAuthors"), "AdminAutho
 const AdminAIProviders = lazyRetry(() => import("./pages/AdminAIProviders"), "AdminAIProviders");
 const AdminAIReports = lazyRetry(() => import("./pages/AdminAIReports"), "AdminAIReports");
 const AdminIntegrations = lazyRetry(() => import("./pages/AdminIntegrations"), "AdminIntegrations");
+const SarkariNotFound = lazyRetry(() => import("./pages/SarkariNotFound"), "SarkariNotFound");
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,7 +40,8 @@ function LegacyArticleRoute() {
 function RouteSeoPolicy() {
   const { pathname } = useLocation();
   useEffect(() => {
-    const privateRoute = pathname.startsWith("/admin") || pathname === "/auth";
+    const knownPublicRoute = pathname === "/" || pathname === "/news" || pathname.startsWith("/news/") || pathname.startsWith("/articles");
+    const privateRoute = pathname.startsWith("/admin") || pathname === "/auth" || !knownPublicRoute;
     let robots = document.querySelector('meta[name="robots"]') as HTMLMetaElement | null;
     if (!robots) {
       robots = document.createElement("meta");
@@ -100,7 +102,7 @@ export default function App() {
                   <Route path="/admin/ai-reports" element={<ProtectedRoute requireAdmin><AdminAIReports /></ProtectedRoute>} />
                   <Route path="/admin/integrations" element={<ProtectedRoute requireAdmin><AdminIntegrations /></ProtectedRoute>} />
                   <Route path="/admin/*" element={<Navigate to="/admin/articles" replace />} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
+                  <Route path="*" element={<SarkariNotFound />} />
                 </Routes>
               </Suspense>
             </ChunkErrorBoundary>

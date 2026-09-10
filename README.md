@@ -24,6 +24,7 @@ The frontend defaults to the current browser origin. Set `VITE_API_URL=http://12
 
 ```sh
 npm test
+npm run typecheck
 npm run lint
 npm run build
 ```

@@ -1,7 +1,7 @@
 import { ArrowRight, Award, BellRing, BookOpenCheck, BriefcaseBusiness, Building2, Calculator, CalendarDays, CheckCircle2, ChevronRight, ClipboardList, FileCheck2, GraduationCap, Hammer, HeartPulse, Keyboard, Landmark, Mail, MapPin, School, Search, Shield, ShieldCheck, Siren, Sparkles, Stethoscope, TrainFront, UserRoundSearch, Wrench } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { SEO } from "@/components/SEO";
 import { SarkariFooter } from "@/components/sarkari/SarkariFooter";
 import { SarkariHeader } from "@/components/sarkari/SarkariHeader";
@@ -130,10 +130,18 @@ const shortDate = new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "sho
 
 export default function Index() {
   const { data: dbArticleData, isLoading } = useDbArticles();
+  const location = useLocation();
   const [params, setParams] = useSearchParams();
   const [query, setQuery] = useState(params.get("q") || "");
   const [expandedDirectories, setExpandedDirectories] = useState<Record<string, boolean>>({});
   const activeCategory = params.get("category") || "";
+  const searchTerm = (params.get("q") || "").trim();
+  const pageTitle = activeCategory
+    ? `${activeCategory} - Latest Government Updates | Sarkari DekhoCampus`
+    : "Sarkari DekhoCampus - Latest Jobs, Results & Admit Cards";
+  const canonicalPath = activeCategory
+    ? `/?category=${encodeURIComponent(activeCategory)}`
+    : location.pathname === "/news" ? "/news" : "/";
 
   const articles = useMemo<PortalArticle[]>(() => {
     const dbArticles = Array.isArray(dbArticleData) ? dbArticleData : [];
@@ -192,10 +200,11 @@ export default function Index() {
   return (
     <div className="sarkari-site">
       <SEO
-        title="Sarkari DekhoCampus - Latest Jobs, Results & Admit Cards"
+        title={pageTitle}
         description="Latest government jobs, results, admit cards, answer keys, admissions, syllabus and scholarship updates in one place."
-        canonical="/"
+        canonical={canonicalPath}
         keywords="sarkari result, government jobs, admit card, exam result, sarkari naukri, online form"
+        noIndex={Boolean(searchTerm)}
       />
       <a className="sarkari-skip-link" href="#content">Skip to main content</a>
       <SarkariHeader />

@@ -24,7 +24,7 @@ import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
 import { DocumentViewer } from "@/components/detail/DocumentViewer";
 import { RichText } from "@/components/detail/RichText";
-import { absoluteCanonical, absoluteSiteUrl } from "@/lib/constant";
+import { absoluteCanonical, absoluteSiteUrl, SITE_CONFIG } from "@/lib/constant";
 import { lazyRetry } from "@/lib/lazyRetry";
 import { stripVisibleArticleSources } from "@/lib/articleContentSanitizer";
 
@@ -98,8 +98,9 @@ export default function ArticleDetail() {
     title: article ? article.title : "Article",
     description: article?.excerpt || "Read the latest education and career articles.",
     canonical: article ? `/news/${article.slug}` : undefined,
-    ogImage: article?.image,
+    ogImage: article?.image || SITE_CONFIG.ogImagePath,
     ogType: "article",
+    noIndex: !article && !dbLoading,
     jsonLd: article ? {
       "@context": "https://schema.org",
       "@type": "NewsArticle",
@@ -112,7 +113,7 @@ export default function ArticleDetail() {
       publisher: {
         "@type": "Organization",
         name: "Sarkari DekhoCampus",
-        logo: { "@type": "ImageObject", url: absoluteSiteUrl("/logo.png") },
+        logo: { "@type": "ImageObject", url: absoluteSiteUrl(SITE_CONFIG.logoPath) },
       },
       mainEntityOfPage: absoluteSiteUrl(`/news/${article.slug}`),
       articleSection: article.category || undefined,

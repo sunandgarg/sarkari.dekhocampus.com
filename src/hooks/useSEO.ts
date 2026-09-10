@@ -9,6 +9,7 @@ type SEOOptions = {
   ogImage?: string;
   ogType?: string;
   jsonLd?: object | object[];
+  noIndex?: boolean;
 };
 
 export function useSEO({
@@ -19,12 +20,13 @@ export function useSEO({
   ogImage,
   ogType = "website",
   jsonLd,
+  noIndex = false,
 }: SEOOptions) {
   const jsonLdKey = JSON.stringify(jsonLd ?? null);
 
   useEffect(() => {
     if (title) {
-      document.title = title.includes("DekhoCampus") ? title : `${title} | DekhoCampus`;
+      document.title = title.includes("DekhoCampus") ? title : `${title} | Sarkari DekhoCampus`;
     }
 
     const setNameMeta = (name: string, content?: string) => {
@@ -53,7 +55,9 @@ export function useSEO({
     const imageUrl = absoluteCanonical(ogImage);
     setNameMeta("description", description);
     setNameMeta("keywords", keywords);
-    setNameMeta("robots", "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1");
+    setNameMeta("robots", noIndex
+      ? "noindex, nofollow, noarchive"
+      : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1");
     setNameMeta("twitter:card", imageUrl ? "summary_large_image" : "summary");
     setNameMeta("twitter:title", title);
     setNameMeta("twitter:description", description);
@@ -85,7 +89,7 @@ export function useSEO({
     }
 
     return () => {
-      document.title = "DekhoCampus - Find Your Dream College";
+      document.title = "Sarkari DekhoCampus - Latest Jobs, Results & Admit Cards";
     };
-  }, [title, description, keywords, canonical, ogImage, ogType, jsonLdKey]);
+  }, [title, description, keywords, canonical, ogImage, ogType, jsonLdKey, noIndex]);
 }

@@ -4,8 +4,8 @@ export const SITE_CONFIG = {
   scheme: "https",
   supportEmail: "outreach@dekhocampus.com",
   searchPath: "/",
-  ogImagePath: "/og-image.jpg",
-  logoPath: "/logo.png",
+  ogImagePath: "/brand/dekhocampus-blog-logo.png",
+  logoPath: "/brand/dekhocampus-blog-logo.png",
 } as const;
 
 export const SITE_URL = `${SITE_CONFIG.scheme}://${SITE_CONFIG.domain}`;

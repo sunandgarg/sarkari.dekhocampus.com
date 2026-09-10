@@ -1,4 +1,3 @@
-# Permanent compatibility redirect for legacy singular college URLs.
-/college/* /colleges/:splat 301
 /articles/* /news/:splat 301
 /articles /news 301
+/* /index.html 200
