@@ -77,12 +77,50 @@ describe("Sarkari article sitemap pagination", () => {
     await expect(fetchPublishedArticleEntries({
       apiUrl: "https://api.example.test",
       siteScope: "sarkari",
+      maxAttempts: 2,
+      retryDelay: async () => undefined,
       fetchPage: async () => ({
         ok: false,
         status: 503,
         json: async () => [],
       }),
     })).rejects.toThrow("offset 0 (HTTP 503)");
+  });
+
+  it("retries a transient Prisma connection-pool response and keeps the sitemap complete", async () => {
+    const fetchPage = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ code: "P2024" }),
+      })
+      .mockResolvedValueOnce(response([{ slug: "recovered-job" }], "0-0/1"));
+
+    const entries = await fetchPublishedArticleEntries({
+      apiUrl: "https://api.example.test",
+      siteScope: "sarkari",
+      fetchPage,
+      retryDelay: async () => undefined,
+    });
+
+    expect(fetchPage).toHaveBeenCalledTimes(2);
+    expect(entries.map((entry) => entry.path)).toEqual(["/news/recovered-job"]);
+  });
+
+  it("does not retry a non-transient client error", async () => {
+    const fetchPage = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: async () => ({ code: "INVALID_SITE_SCOPE" }),
+    });
+
+    await expect(fetchPublishedArticleEntries({
+      apiUrl: "https://api.example.test",
+      siteScope: "sarkari",
+      fetchPage,
+    })).rejects.toThrow("HTTP 400, INVALID_SITE_SCOPE");
+    expect(fetchPage).toHaveBeenCalledTimes(1);
   });
 
   it("rejects page sizes above the REST service ceiling", async () => {

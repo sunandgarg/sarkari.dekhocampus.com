@@ -24,7 +24,11 @@ async function fetchPublishedArticles(): Promise<SitemapEntry[]> {
 
   try {
     if (!API_URL) return [];
-    return await fetchPublishedArticleEntries({ apiUrl: API_URL, siteScope: SARKARI_SITE_SCOPE });
+    return await fetchPublishedArticleEntries({
+      apiUrl: API_URL,
+      siteScope: SARKARI_SITE_SCOPE,
+      requestOrigin: BASE_URL,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (ALLOW_MISSING_ARTICLE_API) {

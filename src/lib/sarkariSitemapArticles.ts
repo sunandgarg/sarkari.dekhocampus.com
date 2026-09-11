@@ -45,7 +45,25 @@ type FetchPublishedArticlesOptions = {
   siteScope: string;
   fetchPage?: FetchPage;
   pageSize?: number;
+  requestOrigin?: string;
+  maxAttempts?: number;
+  retryDelay?: (attempt: number) => Promise<void>;
 };
+
+const DEFAULT_FETCH_ATTEMPTS = 5;
+
+function apiErrorCode(payload: unknown) {
+  if (!payload || typeof payload !== "object" || !("code" in payload)) return "";
+  return typeof payload.code === "string" ? payload.code : "";
+}
+
+function retryableApiFailure(status: number, code: string) {
+  return status === 429 || status >= 500 || code === "P2024";
+}
+
+function waitBeforeRetry(attempt: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, Math.min(6_000, 750 * (2 ** (attempt - 1)))));
+}
 
 function lastModifiedDate(value: unknown) {
   if (typeof value !== "string" || !value.trim()) return undefined;
@@ -114,14 +132,24 @@ export function buildSitemapDocuments(
 export async function fetchPublishedArticleEntries({
   apiUrl,
   siteScope,
-  fetchPage = (url) => fetch(url),
+  fetchPage,
   pageSize = ARTICLE_SITEMAP_PAGE_SIZE,
+  requestOrigin,
+  maxAttempts = DEFAULT_FETCH_ATTEMPTS,
+  retryDelay = waitBeforeRetry,
 }: FetchPublishedArticlesOptions): Promise<ArticleSitemapEntry[]> {
   if (!apiUrl) throw new Error("Sitemap article API URL is not configured");
   if (!siteScope) throw new Error("Sitemap article site scope is not configured");
   if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > ARTICLE_SITEMAP_PAGE_SIZE) {
     throw new Error(`Sitemap article page size must be between 1 and ${ARTICLE_SITEMAP_PAGE_SIZE}`);
   }
+  if (!Number.isSafeInteger(maxAttempts) || maxAttempts < 1 || maxAttempts > DEFAULT_FETCH_ATTEMPTS) {
+    throw new Error(`Sitemap article fetch attempts must be between 1 and ${DEFAULT_FETCH_ATTEMPTS}`);
+  }
+
+  const requestPage: FetchPage = fetchPage || ((url) => fetch(url, {
+    headers: requestOrigin ? { Origin: requestOrigin } : undefined,
+  }));
 
   const entries: ArticleSitemapEntry[] = [];
   let offset = 0;
@@ -136,9 +164,32 @@ export async function fetchPublishedArticleEntries({
     url.searchParams.set("limit", String(pageSize));
     url.searchParams.set("offset", String(offset));
 
-    const response = await fetchPage(url);
-    if (!response.ok) {
-      throw new Error(`Article sitemap request failed at offset ${offset} (HTTP ${response.status})`);
+    let response: FetchResponse | undefined;
+    let lastNetworkError = "";
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        response = await requestPage(url);
+      } catch (error) {
+        lastNetworkError = error instanceof Error ? error.message : String(error);
+        if (attempt === maxAttempts) break;
+        await retryDelay(attempt);
+        continue;
+      }
+
+      if (response.ok) break;
+      const failurePayload = await response.json().catch(() => null);
+      const code = apiErrorCode(failurePayload);
+      if (!retryableApiFailure(response.status, code) || attempt === maxAttempts) {
+        const codeLabel = code ? `, ${code}` : "";
+        throw new Error(`Article sitemap request failed at offset ${offset} (HTTP ${response.status}${codeLabel})`);
+      }
+      response = undefined;
+      await retryDelay(attempt);
+    }
+
+    if (!response) {
+      const detail = lastNetworkError ? `: ${lastNetworkError}` : "";
+      throw new Error(`Article sitemap request failed at offset ${offset} after ${maxAttempts} attempts${detail}`);
     }
 
     const payload: unknown = await response.json();
