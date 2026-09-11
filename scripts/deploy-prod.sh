@@ -43,11 +43,11 @@ for _ in $(seq 1 30); do
   sleep 2
 done
 
-[ -n "$RUN_ID" ] || { echo "Could not find the Sarkari deployment run."; exit 1; }
+[ -n "$RUN_ID" ] || { echo "Could not find the Sarkari production verification run."; exit 1; }
 gh run watch "$RUN_ID" --exit-status
 
 curl --fail --silent --show-error --max-time 20 \
-  https://sarkari-dekhocampus.pages.dev/version.json \
+  https://sarkari.dekhocampus.com/version.json \
   | jq -e --arg sha "$SHA" '.buildId == $sha' >/dev/null
 
-echo "Sarkari DekhoCampus deployment complete: $SHA"
+echo "Sarkari DekhoCampus connected deployment verified: $SHA"

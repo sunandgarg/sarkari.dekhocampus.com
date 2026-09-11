@@ -31,20 +31,20 @@ npm run build
 
 ## Deployment
 
-The safe frontend workflow is `.github/workflows/deploy-sarkari-pages.yml`. It publishes only the Sarkari portal and cannot overwrite the main DekhoCampus frontend.
+The dedicated Cloudflare Pages project is connected directly to this repository's `main` branch. Cloudflare publishes only the Sarkari portal and cannot overwrite the main DekhoCampus frontend. `.github/workflows/deploy-sarkari-pages.yml` independently rebuilds the same immutable revision and verifies that the custom domain exposes its `version.json` marker.
 
 One-time Cloudflare setup:
 
-1. Create a Pages project named `sarkari-dekhocampus`.
-2. Add the production custom domain `sarkari.dekhocampus.com`.
-3. If DNS is not managed by Cloudflare, create a CNAME from `sarkari` to `sarkari-dekhocampus.pages.dev`.
-4. Add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` to the GitHub `production` environment.
+1. Create a Pages project named `sarkari-dekhocampus` and connect it to this repository's `main` branch.
+2. Set the Pages build command to run the verification commands above before `npm run build`, with `dist` as the output directory.
+3. Add the production custom domain `sarkari.dekhocampus.com`.
+4. If DNS is not managed by Cloudflare, create a CNAME from `sarkari` to `sarkari-dekhocampus.pages.dev`.
 5. Apply the updated AWS `CORS_ORIGIN` once so it includes the Sarkari custom and Pages domains.
 
-After the one-time setup, deploy from GitHub Actions or run:
+After the one-time setup, push a verified `main` commit. To wait for and verify that connected deployment from the command line, run:
 
 ```sh
 npm run deploy:prod
 ```
 
-The deploy command requires an authenticated GitHub CLI, a clean `main` branch, and a pushed commit.
+The verification command requires an authenticated GitHub CLI, a clean `main` branch, and a pushed commit.

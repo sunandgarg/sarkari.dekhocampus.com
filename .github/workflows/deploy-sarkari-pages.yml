@@ -1,14 +1,22 @@
-name: Deploy Sarkari DekhoCampus frontend
+name: Verify Sarkari DekhoCampus production
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: sarkari-dekhocampus-production
-  cancel-in-progress: false
+  # Scope cancellation by ref so a rejected manual run on another branch
+  # cannot cancel the valid main production verifier.
+  group: sarkari-dekhocampus-production-${{ github.ref }}
+  # The public alias can expose only one immutable revision at a time. A newer
+  # main push makes an older verifier obsolete, so do not let stale runs poll
+  # until timeout after Cloudflare has already advanced.
+  cancel-in-progress: true
 
 jobs:
   verify-and-deploy:
@@ -16,6 +24,12 @@ jobs:
     environment: production
     timeout-minutes: 30
     steps:
+      - name: Require the production main branch
+        if: ${{ github.ref != 'refs/heads/main' }}
+        run: |
+          echo "Sarkari production verification can run only from main." >&2
+          exit 1
+
       - uses: actions/checkout@v5
 
       - uses: actions/setup-node@v5
@@ -46,20 +60,16 @@ jobs:
           grep -Fq "Sitemap: https://sarkari.dekhocampus.com/sitemap.xml" dist/robots.txt
           ! grep -R -Fq "127.0.0.1:8787" dist/assets
 
-      - name: Publish to the dedicated Cloudflare Pages project
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=sarkari-dekhocampus --branch=main --commit-dirty=true
-
-      - name: Verify the immutable deployment marker
+      # This repository is connected directly to its dedicated Cloudflare Pages
+      # project. Wait for that independent deployment and fail closed if the
+      # custom domain does not expose this workflow's immutable revision.
+      - name: Verify the connected Cloudflare Pages deployment
         env:
           EXPECTED_SHA: ${{ github.sha }}
         run: |
           for attempt in $(seq 1 60); do
             BUILD_ID=$(curl --fail --silent --show-error --max-time 15 \
-              https://sarkari-dekhocampus.pages.dev/version.json \
+              https://sarkari.dekhocampus.com/version.json \
               | jq -r '.buildId' || true)
             if [ "$BUILD_ID" = "$EXPECTED_SHA" ]; then exit 0; fi
             sleep 5
