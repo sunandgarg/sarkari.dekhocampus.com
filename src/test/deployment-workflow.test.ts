@@ -1,10 +1,16 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const workflow = readFileSync(resolve(process.cwd(), ".github/workflows/deploy-sarkari-pages.yml"), "utf8");
 
 describe("Sarkari production verification workflow", () => {
+  it("keeps main-site infrastructure workflows out of the frontend-only repository", () => {
+    expect(readdirSync(resolve(process.cwd(), ".github/workflows"))).toEqual([
+      "deploy-sarkari-pages.yml",
+    ]);
+  });
+
   it("follows the connected Cloudflare Pages deployment from main", () => {
     expect(workflow).toMatch(/push:\s*\n\s*branches:\s*\n\s*- main/);
     expect(workflow).toContain("group: sarkari-dekhocampus-production-${{ github.ref }}");
