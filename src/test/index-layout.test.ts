@@ -42,6 +42,12 @@ describe("Sarkari homepage layout (static source assertions)", () => {
     expect(headerSrc).toMatch(/aria-current/);
   });
 
+  it("gives the primary search field stable form and label semantics", () => {
+    expect(indexSrc).toMatch(/<form[^>]*role="search"[^>]*aria-label="Search Sarkari updates"/);
+    expect(indexSrc).toMatch(/<label[^>]*htmlFor="sarkari-home-search"[^>]*>Search Sarkari updates<\/label>/);
+    expect(indexSrc).toMatch(/<input id="sarkari-home-search" name="q" type="search"/);
+  });
+
   it("protects focus, readable targets and reduced-motion preferences", () => {
     expect(stylesSrc).toMatch(/:focus-visible/);
     expect(stylesSrc).toMatch(/prefers-reduced-motion/);

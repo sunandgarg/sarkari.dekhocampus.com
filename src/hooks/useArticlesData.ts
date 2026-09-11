@@ -2,6 +2,7 @@ import { keepPreviousData, useQuery, useMutation, useQueryClient } from "@tansta
 import { backendClient } from "@/integrations/backend/client";
 import { toast } from "sonner";
 import { SARKARI_SITE_SCOPE } from "@/lib/siteScope";
+import { runWithConcurrency } from "@/lib/runWithConcurrency";
 
 function isPendingReview(response: { status?: number | null }) {
   return response.status === 202;
@@ -38,6 +39,7 @@ export const PUBLIC_ARTICLE_DETAIL_FIELDS =
   `${PUBLIC_ARTICLE_LIST_FIELDS},content,meta_title,meta_description,meta_keywords`;
 
 export const SARKARI_ARCHIVE_PAGE_SIZE = 9;
+export const SARKARI_HOME_READ_CONCURRENCY = 2;
 const LEGACY_PUBLIC_LIST_LIMIT = 60;
 
 const publicArticlesQuery = (fields = PUBLIC_ARTICLE_LIST_FIELDS) =>
@@ -82,21 +84,21 @@ export function useSarkariHomepageArticles(categories: readonly string[], enable
     queryKey: ["sarkari-home-articles", SARKARI_SITE_SCOPE, categoryKey],
     enabled,
     queryFn: async (): Promise<SarkariHomepageArticles> => {
-      const [pinnedResponse, latestResponse, ...categoryResponses] = await Promise.all([
-        publicArticlesQuery()
+      const readTasks = [
+        () => publicArticlesQuery()
           .not("featured_rank", "is", null)
           .order("featured_rank", { ascending: true })
           .limit(SARKARI_ARCHIVE_PAGE_SIZE),
-        publicArticlesQuery()
+        () => publicArticlesQuery()
           .order("created_at", { ascending: false })
           .limit(SARKARI_ARCHIVE_PAGE_SIZE),
-        ...categories.map((category) =>
-          publicArticlesQuery()
-            .eq("category", category)
-            .order("created_at", { ascending: false })
-            .limit(SARKARI_ARCHIVE_PAGE_SIZE)
-        ),
-      ]);
+        ...categories.map((category) => () => publicArticlesQuery()
+          .eq("category", category)
+          .order("created_at", { ascending: false })
+          .limit(SARKARI_ARCHIVE_PAGE_SIZE)),
+      ];
+      const [pinnedResponse, latestResponse, ...categoryResponses] =
+        await runWithConcurrency(readTasks, SARKARI_HOME_READ_CONCURRENCY);
 
       const responses = [pinnedResponse, latestResponse, ...categoryResponses];
       const failed = responses.find((response) => response.error);

@@ -215,9 +215,10 @@ export default function Index() {
             <span className="sarkari-eyebrow"><Sparkles /> AI-assisted discovery, written for people</span>
             <h1>Your shortcut to <em>government opportunities</em></h1>
             <p>Find jobs, results, admit cards and answer keys in a clear format, with important dates and official next steps up front.</p>
-            <form className="sarkari-search" onSubmit={submitSearch}>
+            <form className="sarkari-search" role="search" aria-label="Search Sarkari updates" onSubmit={submitSearch}>
+              <label className="sr-only" htmlFor="sarkari-home-search">Search Sarkari updates</label>
               <Search aria-hidden="true" />
-              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search exam, department, post or notification" aria-label="Search Sarkari updates" aria-describedby="sarkari-search-help" />
+              <input id="sarkari-home-search" name="q" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search exam, department, post or notification" aria-describedby="sarkari-search-help" />
               <button type="submit">Find updates</button>
             </form>
             <div className="sarkari-search-help" id="sarkari-search-help">
