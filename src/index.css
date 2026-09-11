@@ -86,6 +86,7 @@
 .sarkari-section-heading > a svg { width: 15px; }
 .sarkari-carousel { position: relative; min-width: 0; }
 .sarkari-carousel-controls { display: flex; justify-content: flex-end; gap: 7px; margin-bottom: 10px; }
+.sarkari-carousel-status { align-self: center; margin-right: auto; color: #747c89; font-size: 10px; font-weight: 800; letter-spacing: .02em; }
 .sarkari-carousel-controls button { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid #dfe3e8; border-radius: 10px; background: #fff; color: #313948; cursor: pointer; transition: border-color .18s, background .18s, color .18s, transform .18s; }
 .sarkari-carousel-controls button:not(:disabled):hover { transform: translateY(-1px); border-color: #ffb7a4; background: #fff7f3; color: #dc4529; }
 .sarkari-carousel-controls button:disabled { opacity: .34; cursor: default; }
@@ -127,6 +128,11 @@
 .sarkari-filter-summary { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin: 0 0 22px; padding: 13px 15px; border: 1px solid #ffd7cb; border-radius: 10px; background: #fff7f3; color: #4e5562; font-size: 12px; }
 .sarkari-filter-summary p { margin: 0; }
 .sarkari-filter-summary a { color: #d83f24; font-weight: 800; }
+.sarkari-archive-pagination { display: grid; grid-template-columns: minmax(92px, 1fr) auto minmax(92px, 1fr); align-items: center; gap: 12px; width: min(420px, 100%); margin: -16px auto 0; }
+.sarkari-archive-pagination > span { color: #667085; font-size: 12px; font-weight: 800; text-align: center; }
+.sarkari-archive-pagination > a { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; padding: 0 15px; border: 1px solid #d8e0f8; border-radius: 8px; background: #fff; color: #3257d2; font-size: 12px; font-weight: 850; text-decoration: none; }
+.sarkari-archive-pagination > a:last-child { justify-self: end; }
+.sarkari-archive-pagination > a:hover { border-color: #aebcf0; background: #f5f7fd; }
 .sarkari-columns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; }
 .sarkari-board { overflow: hidden; border: 1px solid #e4e6ea; border-radius: 14px; background: #fff; box-shadow: 0 8px 24px rgba(22,29,42,.035); }
 .sarkari-board header { min-height: 56px; display: flex; align-items: center; border-bottom: 1px solid #eceef1; background: #fff; color: #172033; }
@@ -466,9 +472,35 @@
 .sarkari-related-icon { border-radius: 7px; background: #eef2fc; color: var(--sarkari-primary); }
 .sarkari-official-reminder { border-color: #d4e4da; border-radius: 8px; background: #f7faf8; }
 .sarkari-footer { background: #18213b; }
+.sarkari-trending-card footer svg, .sarkari-update-card footer svg,
+.sarkari-category-dock a > svg:last-child, .sarkari-related-card > svg {
+  transition: transform .18s ease;
+}
+.sarkari-trending-card:hover footer svg, .sarkari-update-card:hover footer svg,
+.sarkari-category-dock a:hover > svg:last-child, .sarkari-related-card:hover > svg {
+  transform: translateX(3px);
+}
+.sarkari-carousel-controls button:active, .sarkari-search-button:active,
+.sarkari-menu-button:active, .sarkari-category-dock a:active,
+.sarkari-directory-grid > a:active, .sarkari-next-step-grid button:active {
+  transform: scale(.97);
+}
+.sarkari-update-row, .sarkari-directory, .sarkari-about,
+.sarkari-related, .sarkari-detail-faq {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 420px;
+}
+.sarkari-search-dialog { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", sans-serif; }
 @media (max-width: 560px) {
   .sarkari-detail-hero, .sarkari-content-card { border-radius: 10px; }
   .sarkari-next-step { border-radius: 9px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sarkari-trending-card footer svg, .sarkari-update-card footer svg,
+  .sarkari-category-dock a > svg:last-child, .sarkari-related-card > svg {
+    transform: none !important;
+  }
 }
 
 /* DekhoCampus 2.0 - Clean Education Platform

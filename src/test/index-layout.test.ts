@@ -11,7 +11,7 @@ describe("Sarkari homepage layout (static source assertions)", () => {
     expect(indexSrc).toMatch(/Search exam, department, post or notification/);
     expect(indexSrc).toMatch(/Official links first/);
     expect(indexSrc).toMatch(/Latest alerts/);
-    expect(indexSrc).toMatch(/sarkariCategories\.map/);
+    expect(indexSrc).toMatch(/SARKARI_CATEGORIES\.map/);
   });
 
   it("supports the discovery paths users expect from a government-job portal", () => {
@@ -26,7 +26,7 @@ describe("Sarkari homepage layout (static source assertions)", () => {
 
   it("limits dense sections with progressive disclosure and reusable carousels", () => {
     expect(indexSrc).toMatch(/SarkariCarousel/);
-    expect(indexSrc).toMatch(/slice\(0, 9\)/);
+    expect(indexSrc).toMatch(/SARKARI_ARCHIVE_PAGE_SIZE/);
     expect(indexSrc).toMatch(/expandedDirectories/);
     expect(stylesSrc).toMatch(/\.sarkari-carousel-track[^}]*grid-template-rows:\s*repeat\(2, auto\)/);
     expect(stylesSrc).toMatch(/\.sarkari-carousel-track[^}]*grid-auto-columns:\s*calc\(\(100% - 24px\) \/ 3\)/);

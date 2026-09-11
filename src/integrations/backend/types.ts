@@ -901,6 +901,7 @@ export type Database = {
           meta_description: string
           meta_keywords: string
           meta_title: string
+          site_scope: string
           slug: string
           status: string
           tags: string[]
@@ -924,6 +925,7 @@ export type Database = {
           meta_description?: string
           meta_keywords?: string
           meta_title?: string
+          site_scope?: string
           slug: string
           status?: string
           tags?: string[]
@@ -947,6 +949,7 @@ export type Database = {
           meta_description?: string
           meta_keywords?: string
           meta_title?: string
+          site_scope?: string
           slug?: string
           status?: string
           tags?: string[]

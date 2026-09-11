@@ -17,13 +17,13 @@ export const getLeadConsentPreference = () => {
     if (value === "false") return false;
     if (value === "true") return true;
   } catch {
-    // Keep legal default aligned with the visible forms.
+    // A missing preference must never be treated as affirmative consent.
   }
-  return true;
+  return false;
 };
 
 export const leadConsentAccepted = (lead: { consent_terms_accepted?: boolean | null } | null | undefined) =>
-  lead?.consent_terms_accepted !== false;
+  lead?.consent_terms_accepted === true;
 
 export const leadConsentLabel = (lead: { consent_terms_accepted?: boolean | null } | null | undefined) =>
   leadConsentAccepted(lead) ? "Y" : "N";

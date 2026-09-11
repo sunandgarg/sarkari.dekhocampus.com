@@ -3,6 +3,9 @@ import { functionUrl } from "@/lib/backendMode";
 const LEAD_URL = functionUrl("save-lead");
 
 export async function saveLeadPhase(payload: Record<string, unknown>) {
+  if (payload.consent_terms_accepted !== true) {
+    throw new Error("Privacy and terms consent is required");
+  }
   const response = await fetch(LEAD_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

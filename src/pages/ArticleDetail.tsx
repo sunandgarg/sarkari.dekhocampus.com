@@ -1,6 +1,6 @@
-import { useParams, Link, Navigate, useNavigate, useLocation } from "react-router-dom";
+import { useParams, Link, Navigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, ArrowUp, BellRing, Bookmark, BriefcaseBusiness, Calendar, CheckCircle2, Clock, Eye, FileCheck2, Link2, List, Pause, Play, Send, Share2, ShieldCheck, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,11 +13,7 @@ import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { LeadCaptureForm } from "@/components/LeadCaptureForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DeferUntilVisible } from "@/components/DeferUntilVisible";
-import { articles as educationArticles } from "@/data/articles";
-import { sarkariArticles } from "@/data/sarkariArticles";
-import { useDbArticle, useDbArticles } from "@/hooks/useArticlesData";
-import { AuthorByline } from "@/components/AuthorByline";
-import { useAuth } from "@/hooks/useAuth";
+import { useDbArticle, useRelatedSarkariArticles } from "@/hooks/useArticlesData";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
@@ -27,15 +23,14 @@ import { RichText } from "@/components/detail/RichText";
 import { absoluteCanonical, absoluteSiteUrl, SITE_CONFIG } from "@/lib/constant";
 import { lazyRetry } from "@/lib/lazyRetry";
 import { stripVisibleArticleSources } from "@/lib/articleContentSanitizer";
+import { SARKARI_FAQ_PAGE } from "@/lib/siteScope";
 
 // Heavy below-the-fold components - lazy loaded for faster initial paint
-const AlsoCheckSection = lazyRetry(() => import("@/components/AlsoCheckSection").then(m => ({ default: m.AlsoCheckSection })), "AlsoCheckSection");
 const DynamicAdBanner = lazyRetry(() => import("@/components/DynamicAdBanner").then(m => ({ default: m.DynamicAdBanner })), "DynamicAdBanner");
 const GoogleAd = lazyRetry(() => import("@/components/ads/GoogleAd").then(m => ({ default: m.GoogleAd })), "GoogleAd");
 const FAQSection = lazyRetry(() => import("@/components/FAQSection").then(m => ({ default: m.FAQSection })), "FAQSection");
-const ArticleLinkedResources = lazyRetry(() => import("@/components/detail/ArticleLinkedResources").then(m => ({ default: m.ArticleLinkedResources })), "ArticleLinkedResources");
 
-const staticArticles = [...sarkariArticles, ...educationArticles];
+const SAVED_ARTICLES_KEY = "sarkari_saved_articles_v1";
 
 const NEWS_CATEGORIES = [
   { label: "All News", value: "" },
@@ -57,13 +52,12 @@ function normalizeSlug(s: string) {
 
 export default function ArticleDetail() {
   const { slug: rawSlug } = useParams<{ slug: string }>();
-  const decoded = decodeURIComponent(rawSlug || "");
+  let decoded = rawSlug || "";
+  try { decoded = decodeURIComponent(decoded); } catch { /* malformed routes resolve to not found */ }
   const cleanSlug = normalizeSlug(decoded);
   const needsRedirect = !!(rawSlug && cleanSlug && cleanSlug !== rawSlug && cleanSlug !== decoded);
 
   const { data: dbArticle, isLoading: dbLoading } = useDbArticle(cleanSlug || rawSlug);
-  const { data: dbArticleList } = useDbArticles();
-  const staticArticle = staticArticles.find((a) => a.slug === (cleanSlug || rawSlug));
   const article = useMemo(() => {
     if (dbArticle) {
       const text = (dbArticle.description || dbArticle.content || "").replace(/<[^>]+>/g, " ");
@@ -79,21 +73,19 @@ export default function ArticleDetail() {
         readTime: `${mins} min read`,
         author: dbArticle.author || "Sarkari DekhoCampus Desk",
         publishedAt: new Date(dbArticle.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
-        views: (dbArticle as any).views ?? 0,
+        views: dbArticle.views ?? 0,
         tags: dbArticle.tags || [],
-        author_id: (dbArticle as any).author_id as string | undefined,
       };
     }
-    return staticArticle ? { ...staticArticle, content: stripVisibleArticleSources(staticArticle.content), views: 0, author_id: undefined as string | undefined } : null;
-  }, [dbArticle, staticArticle]);
+    return null;
+  }, [dbArticle]);
+  const { data: relatedDbArticles = [] } = useRelatedSarkariArticles(article?.category, article?.tags || [], article?.slug);
 
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user } = useAuth();
   const [progress, setProgress] = useState(0);
   const [tocSheetOpen, setTocSheetOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [saved, setSaved] = useState(false);
+  const reduceMotion = useReducedMotion();
   useSEO({
     title: article ? article.title : "Article",
     description: article?.excerpt || "Read the latest education and career articles.",
@@ -134,20 +126,20 @@ export default function ArticleDetail() {
 
   useEffect(() => () => { if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel(); }, []);
 
-  // Hydrate saved state from localStorage when user/article changes (kept before early returns)
+  // Saving is intentionally browser-local; authentication and admin live only
+  // on the main DekhoCampus application.
   useEffect(() => {
-    if (!user || !article) { setSaved(false); return; }
+    if (!article) { setSaved(false); return; }
     try {
-      const list: string[] = JSON.parse(localStorage.getItem(`dc_saved_articles_${user.id}`) || "[]");
+      const list: string[] = JSON.parse(localStorage.getItem(SAVED_ARTICLES_KEY) || "[]");
       setSaved(list.includes(article.slug));
     } catch { setSaved(false); }
-  }, [article, user]);
+  }, [article]);
 
 
   const recommendations = useMemo(() => {
     if (!article) return [];
-    const tagSet = new Set(article.tags);
-    const dynamicArticles = (dbArticleList || []).map((item) => ({
+    return relatedDbArticles.map((item) => ({
       slug: item.slug,
       title: item.title,
       excerpt: item.description || "Read the latest eligibility, dates and official next steps.",
@@ -157,15 +149,7 @@ export default function ArticleDetail() {
       publishedAt: new Date(item.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
       tags: item.tags || [],
     }));
-    const seen = new Set<string>();
-    return [...dynamicArticles, ...staticArticles]
-      .filter((candidate) => !seen.has(candidate.slug) && seen.add(candidate.slug))
-      .filter((a) => a.slug !== article.slug)
-      .map((a) => ({ a, score: a.tags.filter((t) => tagSet.has(t)).length * 3 + (a.category === article.category ? 10 : 0) }))
-      .sort((x, y) => y.score - x.score)
-      .slice(0, 9)
-      .map((x) => x.a);
-  }, [article, dbArticleList]);
+  }, [article, relatedDbArticles]);
 
   const toc = useMemo(() => {
     if (!article?.content) return [] as { id: string; text: string; level: number }[];
@@ -192,7 +176,7 @@ export default function ArticleDetail() {
     const el = document.getElementById(id);
     if (!el) return;
     const top = el.getBoundingClientRect().top + window.scrollY - 80;
-    window.scrollTo({ top, behavior: "smooth" });
+    window.scrollTo({ top, behavior: reduceMotion ? "auto" : "smooth" });
   };
 
   // Inject IDs onto h2/h3 of HTML content for TOC anchors - must run before early returns
@@ -238,7 +222,7 @@ export default function ArticleDetail() {
   if (!article) {
     if (dbLoading) {
       return (
-        <div className="min-h-screen bg-background">
+        <div className="sarkari-site min-h-screen bg-background">
           <SarkariHeader />
           <div className="w-full h-[220px] sm:h-[340px] lg:h-[420px] bg-muted animate-pulse" />
           <div className="container max-w-6xl mx-auto px-4 sm:px-6 mt-6 grid lg:grid-cols-12 gap-6">
@@ -267,7 +251,7 @@ export default function ArticleDetail() {
       );
     }
     return (
-      <div className="min-h-screen bg-background">
+      <div className="sarkari-site min-h-screen bg-background">
         <SarkariHeader />
         <div className="container py-20 text-center">
           <h1 className="text-2xl font-bold text-foreground mb-2">Article Not Found</h1>
@@ -320,18 +304,11 @@ export default function ArticleDetail() {
     setIsListening(true);
   };
 
-  const savedKey = user ? `dc_saved_articles_${user.id}` : "";
-
   const handleSave = () => {
-    if (!user) {
-      toast.error("Please sign in to save articles");
-      navigate(`/auth?redirect=${encodeURIComponent(location.pathname)}`);
-      return;
-    }
     try {
-      const list: string[] = JSON.parse(localStorage.getItem(savedKey) || "[]");
+      const list: string[] = JSON.parse(localStorage.getItem(SAVED_ARTICLES_KEY) || "[]");
       const next = saved ? list.filter((s) => s !== article.slug) : Array.from(new Set([...list, article.slug]));
-      localStorage.setItem(savedKey, JSON.stringify(next));
+      localStorage.setItem(SAVED_ARTICLES_KEY, JSON.stringify(next));
       setSaved(!saved);
       toast.success(saved ? "Removed from your list" : "Saved to your reading list");
     } catch {
@@ -343,7 +320,7 @@ export default function ArticleDetail() {
 
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="sarkari-site min-h-screen bg-background">
       {/* Reading progress bar */}
       <div className="fixed top-0 left-0 right-0 h-1 z-[60] bg-transparent">
         <div className="h-full bg-primary transition-[width] duration-150" style={{ width: `${progress}%` }} />
@@ -383,11 +360,7 @@ export default function ArticleDetail() {
                 <h1>{article.title}</h1>
                 {article.excerpt && <p className="sarkari-detail-excerpt">{article.excerpt}</p>}
                 <div className="sarkari-detail-meta">
-                  {article.author_id ? (
-                    <AuthorByline authorId={article.author_id} fallbackName={article.author} />
-                  ) : (
-                    <span className="sarkari-detail-author"><i>{(article.author || "SD").split(/\s+/).map((word) => word[0]).join("").slice(0, 2).toUpperCase()}</i><strong>{article.author}</strong></span>
-                  )}
+                  <span className="sarkari-detail-author"><i>{(article.author || "SD").split(/\s+/).map((word) => word[0]).join("").slice(0, 2).toUpperCase()}</i><strong>{article.author}</strong></span>
                   <span><Calendar aria-hidden="true" /> {article.publishedAt}</span>
                   <span><Clock aria-hidden="true" /> {article.readTime}</span>
                   {article.views > 0 && <span><Eye aria-hidden="true" /> {article.views >= 1000 ? `${(article.views / 1000).toFixed(1)}K` : article.views}</span>}
@@ -405,10 +378,10 @@ export default function ArticleDetail() {
               </section>
 
               {article.image && !article.image.includes("placeholder") && (
-                <figure className="sarkari-detail-image"><img src={article.image} alt={article.title} fetchPriority="high" decoding="async" /></figure>
+                <figure className="sarkari-detail-image"><img src={article.image} alt={article.title} width="1200" height="675" fetchPriority="high" decoding="async" /></figure>
               )}
 
-              <motion.section id="article-content" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="sarkari-content-card">
+              <motion.section id="article-content" initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduceMotion ? 0 : 0.24 }} className="sarkari-content-card">
                 <div className="sarkari-content-heading"><span>Complete update</span><h2>Details, eligibility and next steps</h2></div>
                 {article.content?.trim().startsWith("<") ? (
                   contentSegments ? (
@@ -433,8 +406,6 @@ export default function ArticleDetail() {
               </details>
 
               <DeferUntilVisible minHeight={120}><div className="mt-8"><DynamicAdBanner variant="horizontal" position="mid-page" page="articles" itemSlug={cleanSlug} /></div></DeferUntilVisible>
-              <DeferUntilVisible minHeight={160}><ArticleLinkedResources articleId={(dbArticle as any)?.id} tags={article.tags} /></DeferUntilVisible>
-
               {recommendations.length > 0 && (
                 <section className="sarkari-related" aria-labelledby="related-title">
                   <div className="sarkari-related-heading"><div><span>Continue exploring</span><h2 id="related-title">More {article.category.toLowerCase()} updates</h2><p>Prioritised using the same category and matching topics.</p></div><Link to={`/?category=${encodeURIComponent(article.category)}`}>View all <ArrowRight /></Link></div>
@@ -452,7 +423,7 @@ export default function ArticleDetail() {
 
               <DeferUntilVisible minHeight={300}>
                 <div className="sarkari-detail-faq">
-                  <FAQSection page="articles" itemSlug={cleanSlug} title="Frequently Asked Questions" fallback={[
+                  <FAQSection page={SARKARI_FAQ_PAGE} itemSlug={cleanSlug} title="Frequently Asked Questions" fallback={[
                     { question: `What is this article "${article.title}" about?`, answer: article.excerpt || `Read this Sarkari DekhoCampus guide for the latest updates, eligibility, dates and official next steps.` },
                     { question: `Who should read this update?`, answer: `Candidates tracking ${article.category || "government opportunities"}, eligibility, applications or exam next steps may find this update useful.` },
                     { question: `How often is this article updated?`, answer: `Our editorial team reviews articles as new official notifications and dates become available.` },
@@ -479,7 +450,7 @@ export default function ArticleDetail() {
       </main>
 
       <button
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        onClick={() => window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" })}
         className={`fixed bottom-24 right-5 z-40 rounded-full bg-primary text-primary-foreground shadow-lg w-11 h-11 flex items-center justify-center transition ${progress > 15 ? "opacity-100" : "opacity-0 pointer-events-none"}`}
         aria-label="Back to top"
       >
@@ -582,7 +553,6 @@ export default function ArticleDetail() {
 
       <DeferUntilVisible minHeight={200}>
         <div className="container max-w-4xl"><GoogleAd placement="article" position="after-content" pageKey="article" className="my-6" /></div>
-        <AlsoCheckSection />
       </DeferUntilVisible>
       <SarkariFooter />
     </div>

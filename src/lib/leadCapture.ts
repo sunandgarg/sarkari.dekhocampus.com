@@ -71,6 +71,8 @@ export async function silentSaveLead(payload: SilentLeadPayload): Promise<boolea
   const email = payload.email ?? c.email ?? "";
   const phone = normalizeIndianMobile(payload.phone ?? c.phone ?? "");
   if (!name || phone.length !== 10 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return false;
+  const consentAccepted = payload.consent_terms_accepted ?? getLeadConsentPreference();
+  if (consentAccepted !== true) return false;
 
   const body = {
     name,
@@ -86,7 +88,7 @@ export async function silentSaveLead(payload: SilentLeadPayload): Promise<boolea
     interested_college_slug: payload.interested_college_slug ?? null,
     interested_course_slug: payload.interested_course_slug ?? null,
     interested_exam_slug: payload.interested_exam_slug ?? null,
-    consent_terms_accepted: payload.consent_terms_accepted ?? getLeadConsentPreference(),
+    consent_terms_accepted: true,
     consent_text: payload.consent_text ?? LEAD_CONSENT_TEXT,
     consent_at: payload.consent_at ?? new Date().toISOString(),
     silent_capture: true,

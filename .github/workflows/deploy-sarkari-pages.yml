@@ -38,6 +38,10 @@ jobs:
           npm run build
           rm -f dist/_worker.js
           test ! -e dist/_worker.js
+          test -s dist/sitemap.xml
+          test -s dist/sitemap-1.xml
+          grep -Fq "<sitemapindex" dist/sitemap.xml
+          grep -Fq "<urlset" dist/sitemap-1.xml
           grep -Fq "https://sarkari.dekhocampus.com" dist/sitemap.xml
           grep -Fq "Sitemap: https://sarkari.dekhocampus.com/sitemap.xml" dist/robots.txt
           ! grep -R -Fq "127.0.0.1:8787" dist/assets

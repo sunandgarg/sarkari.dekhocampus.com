@@ -8,10 +8,11 @@ interface Props {
   columns: BulkColumn[];
   searchKeys?: string[];
   orderBy?: { column: string; ascending?: boolean };
+  scope?: { column: string; value: string };
 }
 
 /** Toggle button + inline bulk edit panel for any list page. */
-export function BulkEditToggle({ table, columns, searchKeys, orderBy }: Props) {
+export function BulkEditToggle({ table, columns, searchKeys, orderBy, scope }: Props) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -26,7 +27,7 @@ export function BulkEditToggle({ table, columns, searchKeys, orderBy }: Props) {
       </Button>
       {open && (
         <div className="my-3 bg-card border border-border rounded-2xl p-3">
-          <BulkEditGrid table={table} columns={columns} searchKeys={searchKeys} orderBy={orderBy} />
+          <BulkEditGrid table={table} columns={columns} searchKeys={searchKeys} orderBy={orderBy} scope={scope} />
         </div>
       )}
     </>

@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import dcLogo from "@/assets/dc-lead-logo.png";
-import { useUserProfile } from "@/hooks/useUserProfile";
 import { getPrefillCookie, savePrefillCookie } from "@/components/CookieConsent";
 import { markLeadSubmitted } from "@/lib/leadCapture";
 import { useInlineOtp, isValidIndianMobile, PHONE_HINT, sanitizeIndianMobile } from "@/components/LeadInlineOtp";
@@ -77,16 +76,15 @@ export function LeadCaptureForm({
   const [formData, setFormData] = useState({
     name: "", email: "", phone: "", course: "", state: "", city: "",
   });
-  const [errors, setErrors] = useState<{ name?: string; email?: string; course?: string; state?: string; city?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; email?: string; course?: string; state?: string; city?: string; consent?: string }>({});
   const [filledTracked, setFilledTracked] = useState<{ name?: boolean; email?: boolean; phone?: boolean }>({});
   const [programMode, setProgramMode] = useState<ProgramMode>("regular");
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const [leadId, setLeadId] = useState<string | null>(null);
-  const [authorized, setAuthorized] = useState(true);
+  const [authorized, setAuthorized] = useState(false);
   const { data: locations } = useStatesAndCities();
-  const { data: profile } = useUserProfile();
   const effectiveConsentText = LEAD_CONSENT_TEXT.replace("admission guidance", consentPurpose);
 
   // Derive form key from source so admin per-form OTP channel override applies.
@@ -101,7 +99,8 @@ export function LeadCaptureForm({
   })();
   const otp = useInlineOtp(formData.phone, formKey);
 
-  // Prefill from cookie first (instant), then from logged-in profile when ready.
+  // Public Sarkari forms use only consented browser-local prefill. Account and
+  // profile management live on the main DekhoCampus application.
   useEffect(() => {
     const c = getPrefillCookie();
     setFormData((prev) => ({
@@ -113,18 +112,6 @@ export function LeadCaptureForm({
       city: prev.city || c.city || "",
     }));
   }, []);
-
-  useEffect(() => {
-    if (!profile) return;
-    setFormData((prev) => ({
-      name: prev.name || profile.name,
-      email: prev.email || profile.email,
-      phone: prev.phone || sanitizeIndianMobile(profile.phone || ""),
-      course: prev.course,
-      state: prev.state || profile.state,
-      city: prev.city || profile.city,
-    }));
-  }, [profile]);
 
   const update = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -198,7 +185,7 @@ export function LeadCaptureForm({
     e.preventDefault();
     trackEvent("lead_form_submit_attempt", { source, variant });
 
-    const newErrors: { name?: string; email?: string; course?: string; state?: string; city?: string } = {};
+    const newErrors: { name?: string; email?: string; course?: string; state?: string; city?: string; consent?: string } = {};
     if (step === 1 && !formData.name.trim()) {
       newErrors.name = "Please enter your name";
     } else if (step === 1 && formData.name.trim().length < 2) {
@@ -208,6 +195,9 @@ export function LeadCaptureForm({
       newErrors.email = "Please enter your email";
     } else if (step === 1 && formData.email.trim() && !EMAIL_REGEX.test(formData.email.trim())) {
       newErrors.email = "Please enter a valid email address";
+    }
+    if (step === 1 && !authorized) {
+      newErrors.consent = "Please accept the Privacy Policy and Terms to continue";
     }
     if (step === 2 && !formData.course?.trim()) {
       newErrors.course = `Please select your ${interestLabel.toLowerCase()}`;
@@ -221,7 +211,7 @@ export function LeadCaptureForm({
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       trackEvent("lead_form_validation_error", { source, variant, fields: Object.keys(newErrors).join(",") });
-      toast.error(newErrors.name || newErrors.email || newErrors.course || newErrors.state || newErrors.city || "Please fix the errors");
+      toast.error(newErrors.name || newErrors.email || newErrors.consent || newErrors.course || newErrors.state || newErrors.city || "Please fix the errors");
       return;
     }
     if (step === 1 && !isValidIndianMobile(formData.phone)) {
@@ -310,7 +300,20 @@ export function LeadCaptureForm({
             {formData.phone.length > 0 && !isValidIndianMobile(formData.phone) && <p className={`text-xs ${dark ? "text-white" : "text-destructive"}`}>{PHONE_HINT}</p>}
             {otp.verifyBlock && <div className={dark ? "rounded-xl bg-white p-2 text-slate-900" : ""}>{otp.verifyBlock}</div>}
           </div>
-          <LeadConsentCheckbox checked={authorized} onCheckedChange={setAuthorized} compact={compact} dark={dark} purposeText={consentPurpose} />
+          <div>
+            <LeadConsentCheckbox
+              checked={authorized}
+              onCheckedChange={(checked) => {
+                setAuthorized(checked);
+                if (checked) setErrors((current) => ({ ...current, consent: undefined }));
+              }}
+              compact={compact}
+              dark={dark}
+              purposeText={consentPurpose}
+              invalid={Boolean(errors.consent)}
+            />
+            {errors.consent && <p role="alert" className={`mt-1 text-xs ${dark ? "text-white" : "text-destructive"}`}>{errors.consent}</p>}
+          </div>
         </>
       ) : (
         <>

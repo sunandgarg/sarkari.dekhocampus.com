@@ -19,6 +19,8 @@ interface Props {
   upsertKey?: string;
   onDone?: () => void;
   label?: string;
+  /** Values enforced on generated previews and every committed row. */
+  fixedValues?: Record<string, unknown>;
 }
 
 /** Friendly model menu. Static fallbacks plus any providers the
@@ -50,7 +52,7 @@ const WORD_LIMITS = [
 
 type ItemRow = Record<string, any> & { _action?: "insert" | "upsert"; _key?: string };
 
-export function AIGenerateDialog({ entityType, table, upsertKey = "slug", onDone, label }: Props) {
+export function AIGenerateDialog({ entityType, table, upsertKey = "slug", onDone, label, fixedValues = {} }: Props) {
   const [open, setOpen] = useState(false);
   const [topic, setTopic] = useState("");
   const [count, setCount] = useState(5);
@@ -144,6 +146,7 @@ export function AIGenerateDialog({ entityType, table, upsertKey = "slug", onDone
             check_own_news: entityType === "articles" ? checkOwnNews : false,
             competitor_sources: entityType === "articles" ? researchSources.split("\n").map(s => s.trim()).filter(Boolean) : undefined,
             word_limit: entityType === "articles" ? wordLimit : undefined,
+            ...fixedValues,
           },
         },
       });
@@ -152,6 +155,7 @@ export function AIGenerateDialog({ entityType, table, upsertKey = "slug", onDone
       const list: ItemRow[] = (data?.items || []).map((r: any) => ({
         ...r,
         ...(upsertKey === "slug" ? { slug: r.slug || slugify(r.name || r.title || "") } : {}),
+        ...fixedValues,
       }));
       setItems(list);
       setModelUsed(data?.model_used || "");
@@ -171,7 +175,7 @@ export function AIGenerateDialog({ entityType, table, upsertKey = "slug", onDone
   };
 
   const commit = async () => {
-    const payload = visible.map(({ _action, _key, ...r }) => r);
+    const payload = visible.map(({ _action, _key, ...r }) => ({ ...r, ...fixedValues }));
     if (!payload.length) return;
     setBusy(true);
     try {

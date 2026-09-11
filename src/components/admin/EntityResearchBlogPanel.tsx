@@ -59,7 +59,7 @@ const formatDate = (value?: string | null) => value
   ? new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value))
   : "Not run yet";
 
-export function EntityResearchBlogPanel({ onArticlesCreated }: { onArticlesCreated?: () => void }) {
+export function EntityResearchBlogPanel({ onArticlesCreated, siteScope }: { onArticlesCreated?: () => void; siteScope?: string }) {
   const queryClient = useQueryClient();
   const [entityType, setEntityType] = useState<EntityType>("college");
   const [search, setSearch] = useState("");
@@ -184,7 +184,7 @@ export function EntityResearchBlogPanel({ onArticlesCreated }: { onArticlesCreat
     setBusyId(schedule.id);
     try {
       const { data, error } = await backendClient.functions.invoke("admin-blog-agent", {
-        body: { trigger_type: "manual", mode: "entity_schedule", schedule_id: schedule.id, generate_remaining_today: remainingToday },
+        body: { trigger_type: "manual", mode: "entity_schedule", schedule_id: schedule.id, generate_remaining_today: remainingToday, site_scope: siteScope },
       });
       if (error || data?.error) throw error || new Error(data.error);
       if (data?.skipped) toast.info(data.message || "Nothing new to generate");

@@ -9,6 +9,7 @@ import { Tag, Plus, X, Save, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { CSVTools } from "@/components/CSVTools";
+import { SARKARI_SITE_SCOPE } from "@/lib/siteScope";
 /**
  * Bulk Tag Manager for articles.
  * - Filter by current tag / search.
@@ -25,11 +26,12 @@ export default function AdminTagsManager() {
   const [customTag, setCustomTag] = useState("");
 
   const { data: articles = [], isLoading } = useQuery({
-    queryKey: ["admin-articles-tags"],
+    queryKey: ["admin-articles-tags", SARKARI_SITE_SCOPE],
     queryFn: async () => {
       const { data, error } = await backendClient
         .from("articles")
         .select("id,title,slug,tags,category,is_active,created_at")
+        .eq("site_scope", SARKARI_SITE_SCOPE)
         .order("created_at", { ascending: false })
         .limit(2000);
       if (error) throw error;
@@ -66,7 +68,11 @@ export default function AdminTagsManager() {
         const next = action === "add"
           ? Array.from(new Set([...current, tagToApply]))
           : current.filter(t => t !== tagToApply);
-        return backendClient.from("articles").update({ tags: next }).eq("id", id);
+        return backendClient
+          .from("articles")
+          .update({ tags: next })
+          .eq("id", id)
+          .eq("site_scope", SARKARI_SITE_SCOPE);
       });
       const results = await Promise.all(updates);
       const err = results.find(r => r.error)?.error;
@@ -90,7 +96,7 @@ export default function AdminTagsManager() {
   return (
     <AdminLayout title="Article Tags Manager">
       <div className="mb-4">
-        <CSVTools table="articles" filename="articles.csv" columns="*" upsertKey="slug" />
+        <CSVTools table="articles" filename="articles.csv" columns="*" upsertKey="site_scope,slug" scope={{ column: "site_scope", value: SARKARI_SITE_SCOPE }} />
       </div>
 
       <div className="space-y-4">

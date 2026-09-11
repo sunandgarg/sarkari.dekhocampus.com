@@ -18,6 +18,8 @@ interface Props {
   required?: string[];
   upsertKey?: string;
   onImported?: () => void;
+  /** Optional tenant boundary. Export is filtered and imports cannot override it. */
+  scope?: { column: string; value: string };
 }
 
 interface HistoryEntry { at: string; table: string; count: number; ok: boolean; fmt?: string; }
@@ -37,7 +39,7 @@ function pushHistory(e: HistoryEntry) {
  * Supports CSV + JSON, bulk + single-row, with upsert-by-slug semantics.
  * Pass columns="*" to auto-discover every DB column so nothing is dropped.
  */
-export function CSVTools({ table, filename, columns: columnsProp, typeHints: typeHintsProp = {}, required = [], upsertKey = "slug", onImported }: Props) {
+export function CSVTools({ table, filename, columns: columnsProp, typeHints: typeHintsProp = {}, required = [], upsertKey = "slug", onImported, scope }: Props) {
   const csvFileRef = useRef<HTMLInputElement>(null);
   const jsonFileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -71,7 +73,7 @@ export function CSVTools({ table, filename, columns: columnsProp, typeHints: typ
   const typeHints = useMemo(() => ({ ...autoHints, ...typeHintsProp }), [autoHints, typeHintsProp]);
 
   const fetchAll = async () => {
-    if (isAuto) {
+    if (isAuto && !scope) {
       const { rows, schema } = await discoverTable(table);
       // refresh hints/cols from full data - guarantees nothing is dropped on export
       setAutoCols(schema.columns);
@@ -81,10 +83,11 @@ export function CSVTools({ table, filename, columns: columnsProp, typeHints: typ
     const all: any[] = [];
     let from = 0;
     while (true) {
-      const { data, error } = await backendClient
+      let query = (backendClient as any)
         .from(table as any)
-        .select((columnsProp as string[]).join(","))
-        .range(from, from + 999);
+        .select(isAuto ? "*" : (columnsProp as string[]).join(","));
+      if (scope) query = query.eq(scope.column, scope.value);
+      const { data, error } = await query.range(from, from + 999);
       if (error) throw error;
       const chunk = (data || []) as any[];
       all.push(...chunk);
@@ -201,7 +204,9 @@ export function CSVTools({ table, filename, columns: columnsProp, typeHints: typ
 
   const confirmImport = async () => {
     if (!preview) return;
-    const valid = preview.rows.filter((_, i) => !preview.errors.some((e) => e.row === i + 2));
+    const valid = preview.rows
+      .filter((_, i) => !preview.errors.some((e) => e.row === i + 2))
+      .map((row) => scope ? { ...row, [scope.column]: scope.value } : row);
     setBusy(true);
     // Chunk to keep payloads safe and surface progress
     const CHUNK = 500;
@@ -242,7 +247,8 @@ export function CSVTools({ table, filename, columns: columnsProp, typeHints: typ
       }
       const missing = required.filter((k) => row[k] === undefined || String(row[k]).trim() === "");
       if (missing.length) throw new Error(`Missing required: ${missing.join(", ")}`);
-      const { error } = await backendClient.from(table as any).upsert([row] as any, { onConflict: upsertKey });
+      const scopedRow = scope ? { ...row, [scope.column]: scope.value } : row;
+      const { error } = await backendClient.from(table as any).upsert([scopedRow] as any, { onConflict: upsertKey });
       if (error) throw error;
       pushHistory({ at: new Date().toISOString(), table, count: 1, ok: true, fmt: "single" });
       toast.success(`Imported 1 ${table} row`);

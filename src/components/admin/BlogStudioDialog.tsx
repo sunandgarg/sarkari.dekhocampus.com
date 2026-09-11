@@ -11,13 +11,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
+import { SARKARI_FAQ_PAGE } from "@/lib/siteScope";
 
 type Suggestion = { entity_type: string; entity_slug: string; label: string };
 type DraftFaq = { question: string; answer: string };
 type Draft = { title: string; slug: string; description: string; content_html: string; meta_title: string; meta_description: string; meta_keywords: string; tags: string[]; featured_image: string; faqs?: DraftFaq[]; entity_suggestions?: Suggestion[] };
 const LENGTHS = [800, 1200, 1800] as const;
 
-export function BlogStudioDialog({ onSaved }: { onSaved?: () => void }) {
+export function BlogStudioDialog({ onSaved, siteScope }: { onSaved?: () => void; siteScope?: string }) {
   const [open, setOpen] = useState(false);
   const [topic, setTopic] = useState("");
   const [wordLimit, setWordLimit] = useState<number>(1200);
@@ -53,6 +54,7 @@ export function BlogStudioDialog({ onSaved }: { onSaved?: () => void }) {
           topic,
           word_limit: wordLimit,
           content_goals: ["SEO", "AEO", "GEO", "AIO", "LLMO", "LLM"],
+          site_scope: siteScope,
           image: { mode: imageMode, template_url: templateUrl, include_logo: includeLogo, logo_url: logoUrl, resolution: "web" },
         },
       });
@@ -75,14 +77,16 @@ export function BlogStudioDialog({ onSaved }: { onSaved?: () => void }) {
         title: draft.title, slug: slugify(draft.slug), description: draft.description, content: draft.content_html,
         meta_title: draft.meta_title, meta_description: draft.meta_description, meta_keywords: draft.meta_keywords,
         tags: draft.tags || [], featured_image: draft.featured_image, status: "Draft", is_active: true,
-      }, { onConflict: "slug" }).select("id").single();
+        ...(siteScope ? { site_scope: siteScope } : {}),
+      }, { onConflict: siteScope ? "site_scope,slug" : "slug" }).select("id").single();
       if (error) throw error;
       const articleSlug = slugify(draft.slug);
-      const { error: faqDeleteError } = await (backendClient as any).from("faqs").delete().eq("page", "articles").eq("item_slug", articleSlug);
+      const faqPage = siteScope ? SARKARI_FAQ_PAGE : "articles";
+      const { error: faqDeleteError } = await (backendClient as any).from("faqs").delete().eq("page", faqPage).eq("item_slug", articleSlug);
       if (faqDeleteError) throw faqDeleteError;
       if (draft.faqs?.length) {
         const { error: faqInsertError } = await (backendClient as any).from("faqs").insert(draft.faqs.map((faq, index) => ({
-          page: "articles",
+          page: faqPage,
           item_slug: articleSlug,
           question: faq.question,
           answer: faq.answer,

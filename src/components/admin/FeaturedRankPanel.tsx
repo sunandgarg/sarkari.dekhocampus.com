@@ -7,34 +7,45 @@ import { Link } from "react-router-dom";
 interface Props {
   table: "articles" | "colleges";
   detailPath: (slug: string) => string;
+  scope?: { column: string; value: string };
 }
 
 /** Top-of-admin panel showing the current pinned items with one-click remove.
  *  Articles use 4 slots (1 big hero + 3 small) on /news.
  *  Colleges use 5 slots on listing pages.
  */
-export function FeaturedRankPanel({ table, detailPath }: Props) {
+export function FeaturedRankPanel({ table, detailPath, scope }: Props) {
   const qc = useQueryClient();
   const maxSlots = table === "articles" ? 4 : 5;
   const slots = Array.from({ length: maxSlots }, (_, i) => i + 1);
 
   const { data = [], isLoading } = useQuery({
-    queryKey: ["featured-rank", table],
+    queryKey: ["featured-rank", table, scope?.column, scope?.value],
     queryFn: async () => {
       const cols =
         table === "articles"
           ? "id,slug,title,featured_image,featured_rank"
           : "id,slug,name,image,featured_rank";
-      const { data } = await (backendClient as any)
+      let query = (backendClient as any)
         .from(table)
         .select(cols)
-        .not("featured_rank", "is", null)
-        .order("featured_rank", { ascending: true });
+        .not("featured_rank", "is", null);
+      if (scope) query = query.eq(scope.column, scope.value);
+      const { data } = await query.order("featured_rank", { ascending: true });
       return data || [];
     },
   });
 
   const remove = async (id: string) => {
+    if (scope) {
+      const { data: scopedItem, error: scopeError } = await (backendClient as any)
+        .from(table)
+        .select("id")
+        .eq("id", id)
+        .eq(scope.column, scope.value)
+        .maybeSingle();
+      if (scopeError || !scopedItem) { toast.error(scopeError?.message || "This item is outside the current site scope"); return; }
+    }
     const { error } = await (backendClient as any).rpc("clear_featured_rank", { _table: table, _id: id });
     if (error) { toast.error(error.message); return; }
     toast.success("Removed from featured");

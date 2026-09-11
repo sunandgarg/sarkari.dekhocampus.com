@@ -46,6 +46,8 @@ interface Props {
   orderBy?: { column: string; ascending?: boolean };
   selectExtra?: string[];
   pageSize?: number;
+  /** Optional tenant boundary applied to every list and update query. */
+  scope?: { column: string; value: string };
 }
 
 /**
@@ -62,6 +64,7 @@ export function BulkEditGrid({
   orderBy = { column: "updated_at", ascending: false },
   selectExtra = [],
   pageSize = 300,
+  scope,
 }: Props) {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
@@ -76,12 +79,14 @@ export function BulkEditGrid({
   const selectCols = Array.from(new Set(["id", ...columns.map((c) => c.key), ...selectExtra]));
 
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["bulk-edit", table, pageSize, normalizedQ, searchKeys.join("|")],
+    queryKey: ["bulk-edit", table, scope?.column, scope?.value, pageSize, normalizedQ, searchKeys.join("|")],
     queryFn: async () => {
       let query = (backendClient as any)
         .from(table)
         .select(selectCols.join(","))
         .order(orderBy.column, { ascending: orderBy.ascending ?? false });
+
+      if (scope) query = query.eq(scope.column, scope.value);
 
       if (normalizedQ) {
         const ilikeTerm = `%${normalizedQ.replace(/\s+/g, "%")}%`;
@@ -127,7 +132,9 @@ export function BulkEditGrid({
     setSaving(true);
     try {
       const updates = dirtyIds.map((id) =>
-        (backendClient as any).from(table).update(draft[id]).eq("id", id)
+        scope
+          ? (backendClient as any).from(table).update(draft[id]).eq("id", id).eq(scope.column, scope.value)
+          : (backendClient as any).from(table).update(draft[id]).eq("id", id)
       );
       const results = await Promise.all(updates);
       const failed = results.filter((r: any) => r.error);

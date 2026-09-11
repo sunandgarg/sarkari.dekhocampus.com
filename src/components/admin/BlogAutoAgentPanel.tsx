@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bot, CheckCircle2, CirclePause, Clock, ExternalLink, ImageIcon, Loader2, OctagonX, Play, Plus, RotateCcw, Save, Sparkles, Square, Timer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { backendClient } from "@/integrations/backend/client";
@@ -115,7 +115,7 @@ function normalizeImageSettingUrl(value: unknown) {
   return raw;
 }
 
-export function BlogAutoAgentPanel({ onArticlesCreated }: { onArticlesCreated?: () => void }) {
+export function BlogAutoAgentPanel({ onArticlesCreated, siteScope }: { onArticlesCreated?: () => void; siteScope?: string }) {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [sources, setSources] = useState<Source[]>(DEFAULT_SOURCES);
   const [runs, setRuns] = useState<Run[]>([]);
@@ -129,7 +129,7 @@ export function BlogAutoAgentPanel({ onArticlesCreated }: { onArticlesCreated?: 
   const [sourceDraft, setSourceDraft] = useState<Pick<Source, "name" | "url" | "source_type">>({ name: "", url: "", source_type: "official" });
   const [removedSourceIds, setRemovedSourceIds] = useState<string[]>([]);
 
-  const load = async (showLoader = false) => {
+  const load = useCallback(async (showLoader = false) => {
     if (showLoader) setLoading(true);
     try {
       const [{ data: settingsData }, { data: sourceData }, { data: runData }, { data: authorData }] = await Promise.all([
@@ -160,14 +160,15 @@ export function BlogAutoAgentPanel({ onArticlesCreated }: { onArticlesCreated?: 
         if (ids.length) {
           const { data } = await (backendClient as any).from("articles")
             .select("id,title,slug,featured_image,status,description")
-            .in("id", ids);
+            .in("id", ids)
+            .eq("site_scope", siteScope || "main");
           setGeneratedArticles(data || []);
         }
       }
     } finally {
       if (showLoader) setLoading(false);
     }
-  };
+  }, [siteScope]);
 
   useEffect(() => {
     void load(true).then(() => {
@@ -180,7 +181,7 @@ export function BlogAutoAgentPanel({ onArticlesCreated }: { onArticlesCreated?: 
         }
       } catch { /* ignore invalid session draft */ }
     });
-  }, []);
+  }, [load]);
 
   const activeRun = runs.find((run) => run.status === "running");
   const pausedRun = runs.find((run) => run.status === "paused");
@@ -194,7 +195,7 @@ export function BlogAutoAgentPanel({ onArticlesCreated }: { onArticlesCreated?: 
       void load(false);
     }, 3000);
     return () => window.clearInterval(timer);
-  }, [activeRunId]);
+  }, [activeRunId, load]);
 
   useEffect(() => {
     if (loading) return;
@@ -305,7 +306,7 @@ export function BlogAutoAgentPanel({ onArticlesCreated }: { onArticlesCreated?: 
   const runNow = async () => {
     setBusy(true);
     try {
-      const invocation = backendClient.functions.invoke("admin-blog-agent", { body: { trigger_type: "manual" } });
+      const invocation = backendClient.functions.invoke("admin-blog-agent", { body: { trigger_type: "manual", site_scope: siteScope } });
       // The run row is created immediately. Start polling it while the long AI
       // request continues, and keep that state recoverable after navigation.
       window.setTimeout(() => { void load(false); }, 800);
@@ -331,7 +332,7 @@ export function BlogAutoAgentPanel({ onArticlesCreated }: { onArticlesCreated?: 
     setBusy(true);
     try {
       const { data, error } = await backendClient.functions.invoke("admin-blog-agent", {
-        body: { action, run_id: currentRun.id },
+        body: { action, run_id: currentRun.id, site_scope: siteScope },
       });
       if (error || data?.error) throw error || new Error(data.error);
       toast.success(

@@ -37,6 +37,7 @@ import { Link } from "react-router-dom";
 import { useDraftState } from "@/hooks/useDraftState";
 import { syncAutoSlug } from "@/lib/slugify";
 import { sarkariCategories } from "@/data/sarkariArticles";
+import { SARKARI_FAQ_PAGE, SARKARI_SITE_SCOPE } from "@/lib/siteScope";
 
 const STATUSES = ["Draft", "Published"];
 const VERTICALS = ["Government Updates", "Central Government", "State Government", "Railway", "Banking", "Defence", "Teaching"];
@@ -57,6 +58,7 @@ function useArticleCategories() {
 }
 
 const emptyArticle: Partial<DbArticle> = {
+  site_scope: SARKARI_SITE_SCOPE,
   slug: "", title: "", description: "", content: "", vertical: "Government Updates", category: "Latest Jobs", author: "Sarkari DekhoCampus Desk",
   featured_image: "", views: 0, tags: [], meta_title: "", meta_description: "", meta_keywords: "",
   is_active: true, status: "Draft",
@@ -112,7 +114,11 @@ export default function AdminArticles() {
       return toast.error("You do not have permission to publish articles.");
     }
     setBulkBusy(true);
-    const { error } = await (backendClient as any).from("articles").update(updates).in("id", ids);
+    const { error } = await (backendClient as any)
+      .from("articles")
+      .update(updates)
+      .in("id", ids)
+      .eq("site_scope", SARKARI_SITE_SCOPE);
     setBulkBusy(false);
     if (error) return toast.error(error.message);
     toast.success(`${label}: ${ids.length} article(s)`);
@@ -139,7 +145,11 @@ export default function AdminArticles() {
   const bulkDelete = async (ids = Array.from(selectedIds)) => {
     if (!ids.length || !confirm(`Delete ${ids.length} selected article(s)? This cannot be undone.`)) return;
     setBulkBusy(true);
-    const { error } = await (backendClient as any).from("articles").delete().in("id", ids);
+    const { error } = await (backendClient as any)
+      .from("articles")
+      .delete()
+      .in("id", ids)
+      .eq("site_scope", SARKARI_SITE_SCOPE);
     setBulkBusy(false);
     if (error) return toast.error(error.message);
     toast.success(`Deleted ${ids.length} article(s)`);
@@ -164,7 +174,12 @@ export default function AdminArticles() {
       onSuccess: async () => {
         let id = (editing as any).id;
         if (!id && editing.slug) {
-          const { data: row } = await backendClient.from("articles").select("id").eq("slug", editing.slug).maybeSingle();
+          const { data: row } = await backendClient
+            .from("articles")
+            .select("id")
+            .eq("slug", editing.slug)
+            .eq("site_scope", SARKARI_SITE_SCOPE)
+            .maybeSingle();
           id = row?.id;
         }
         if (id && isAdmin) {
@@ -185,9 +200,9 @@ export default function AdminArticles() {
 
   return (
     <AdminLayout title="Articles Manager">
-      {isAdmin && <div className="mb-3 flex flex-wrap gap-2"><BlogStudioDialog onSaved={() => { void refetchArticles(); }} /><AIGenerateDialog entityType="articles" table="articles" /></div>}
-      {isAdmin && <BlogAutoAgentPanel onArticlesCreated={() => { void refetchArticles(); }} />}
-      {isAdmin && <EntityResearchBlogPanel onArticlesCreated={() => { void refetchArticles(); }} />}
+      {isAdmin && <div className="mb-3 flex flex-wrap gap-2"><BlogStudioDialog siteScope={SARKARI_SITE_SCOPE} onSaved={() => { void refetchArticles(); }} /><AIGenerateDialog entityType="articles" table="articles" upsertKey="site_scope,slug" fixedValues={{ site_scope: SARKARI_SITE_SCOPE }} /></div>}
+      {isAdmin && <BlogAutoAgentPanel siteScope={SARKARI_SITE_SCOPE} onArticlesCreated={() => { void refetchArticles(); }} />}
+      {isAdmin && <EntityResearchBlogPanel siteScope={SARKARI_SITE_SCOPE} onArticlesCreated={() => { void refetchArticles(); }} />}
       <div className="flex flex-col sm:flex-row gap-3 mb-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -198,6 +213,7 @@ export default function AdminArticles() {
         </Button>}
         {isAdmin && <BulkEditToggle
           table="articles"
+          scope={{ column: "site_scope", value: SARKARI_SITE_SCOPE }}
           searchKeys={["title","slug","author","category"]}
           columns={[
             { key: "title", label: "Title", width: 240 },
@@ -263,12 +279,14 @@ export default function AdminArticles() {
           table="articles"
           filename="articles.csv"
           columns="*"
+          upsertKey="site_scope,slug"
+          scope={{ column: "site_scope", value: SARKARI_SITE_SCOPE }}
           typeHints={{ tags: "array", views: "number", is_active: "boolean" }}
           onImported={() => { void refetchArticles(); }}
         />
       </div>}
 
-      {isAdmin && <FeaturedRankPanel table="articles" detailPath={(slug) => `/news/${slug}`} />}
+      {isAdmin && <FeaturedRankPanel table="articles" detailPath={(slug) => `/news/${slug}`} scope={{ column: "site_scope", value: SARKARI_SITE_SCOPE }} />}
 
       {isLoading ? (
         <div className="text-center py-12 text-muted-foreground">Loading...</div>
@@ -428,10 +446,10 @@ export default function AdminArticles() {
                       disabled={!editing.slug || !editing.title || saveArticle.isPending}
                       onClick={async () => {
                         if (!editing.slug || !editing.title) { toast.error("Add Title and Slug first"); return; }
-                        const payload = { ...editing, status: editing.status || "Draft" } as any;
+                        const payload = { ...editing, status: editing.status || "Draft", site_scope: SARKARI_SITE_SCOPE } as any;
                         const { data, error } = await backendClient
                           .from("articles")
-                          .upsert(payload, { onConflict: "slug" })
+                          .upsert(payload, { onConflict: "site_scope,slug" })
                           .select()
                           .single();
                         if (error) { toast.error(error.message); return; }
@@ -448,7 +466,7 @@ export default function AdminArticles() {
 
               {/* ── FAQs ── */}
               <AdminFormSection title="FAQs (shown on article page)" icon={<HelpCircle className="w-4 h-4 text-primary" />} defaultOpen={false}>
-                <FaqInlineEditor page="articles" itemSlug={editing.slug || ""} itemName={editing.title} />
+                <FaqInlineEditor page={SARKARI_FAQ_PAGE} itemSlug={editing.slug || ""} itemName={editing.title} />
               </AdminFormSection>
 
               {/* ── SEO ── */}

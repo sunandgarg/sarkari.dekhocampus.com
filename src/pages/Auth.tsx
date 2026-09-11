@@ -116,7 +116,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="sarkari-site min-h-screen bg-background">
       <SarkariHeader />
       <main className="container py-8 md:py-12">
         <div className="grid lg:grid-cols-2 gap-8 items-center max-w-6xl mx-auto">

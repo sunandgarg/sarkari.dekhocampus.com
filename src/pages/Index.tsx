@@ -1,13 +1,13 @@
 import { ArrowRight, Award, BellRing, BookOpenCheck, BriefcaseBusiness, Building2, Calculator, CalendarDays, CheckCircle2, ChevronRight, ClipboardList, FileCheck2, GraduationCap, Hammer, HeartPulse, Keyboard, Landmark, Mail, MapPin, School, Search, Shield, ShieldCheck, Siren, Sparkles, Stethoscope, TrainFront, UserRoundSearch, Wrench } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { SEO } from "@/components/SEO";
 import { SarkariFooter } from "@/components/sarkari/SarkariFooter";
 import { SarkariHeader } from "@/components/sarkari/SarkariHeader";
 import { SarkariCarousel } from "@/components/sarkari/SarkariCarousel";
-import { useDbArticles } from "@/hooks/useArticlesData";
-import { sarkariArticles, sarkariCategories } from "@/data/sarkariArticles";
+import { SARKARI_ARCHIVE_PAGE_SIZE, usePublicArticleArchive, useSarkariHomepageArticles, type DbArticle } from "@/hooks/useArticlesData";
+import { isSarkariCategory, normalizeSarkariCategory, SARKARI_CATEGORIES } from "@/lib/sarkariCategories";
 
 type PortalArticle = {
   slug: string;
@@ -114,88 +114,88 @@ const states = [
   "Gujarat", "West Bengal", "Tamil Nadu", "Karnataka", "Telangana", "Odisha", "Assam", "Kerala", "Jharkhand",
 ];
 
-const normaliseCategory = (value: string) => {
-  const category = value.toLowerCase();
-  if (category.includes("result")) return "Results";
-  if (category.includes("admit") || category.includes("hall ticket")) return "Admit Card";
-  if (category.includes("answer")) return "Answer Key";
-  if (category.includes("admission") || category.includes("counselling")) return "Admissions";
-  if (category.includes("syllabus") || category.includes("pattern")) return "Syllabus";
-  if (category.includes("scholar")) return "Scholarships";
-  if (category.includes("job") || category.includes("vacanc") || category.includes("recruit")) return "Latest Jobs";
-  return value || "Latest Jobs";
-};
-
 const shortDate = new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short" });
 
+const toPortalArticle = (article: DbArticle): PortalArticle => ({
+  slug: article.slug,
+  title: article.title,
+  description: article.description || "Read the complete notification, important dates and official instructions.",
+  category: normalizeSarkariCategory(article.category || article.vertical),
+  createdAt: article.created_at,
+  tags: article.tags || [],
+  isNew: Date.now() - new Date(article.created_at).getTime() < 7 * 86400000,
+});
+
 export default function Index() {
-  const { data: dbArticleData, isLoading } = useDbArticles();
   const location = useLocation();
+  const { tag: routeTag = "" } = useParams<{ tag?: string }>();
   const [params, setParams] = useSearchParams();
   const [query, setQuery] = useState(params.get("q") || "");
   const [expandedDirectories, setExpandedDirectories] = useState<Record<string, boolean>>({});
-  const activeCategory = params.get("category") || "";
+  const requestedCategory = params.get("category") || "";
+  const activeCategory = isSarkariCategory(requestedCategory) ? requestedCategory : "";
   const searchTerm = (params.get("q") || "").trim();
-  const pageTitle = activeCategory
-    ? `${activeCategory} - Latest Government Updates | Sarkari DekhoCampus`
-    : "Sarkari DekhoCampus - Latest Jobs, Results & Admit Cards";
-  const canonicalPath = activeCategory
-    ? `/?category=${encodeURIComponent(activeCategory)}`
-    : location.pathname === "/news" ? "/news" : "/";
+  const tagTerm = routeTag.trim();
+  const requestedPage = Number.parseInt(params.get("page") || "1", 10);
+  const currentPage = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const hasFilters = Boolean(activeCategory || searchTerm || tagTerm);
+  const homeQuery = useSarkariHomepageArticles(SARKARI_CATEGORIES, !hasFilters);
+  const archiveQuery = usePublicArticleArchive({
+    category: activeCategory,
+    search: searchTerm,
+    tag: tagTerm,
+    page: currentPage,
+    enabled: hasFilters,
+  });
+  const isLoading = hasFilters ? archiveQuery.isLoading : homeQuery.isLoading;
+  const loadError = hasFilters ? archiveQuery.error : homeQuery.error;
 
-  const articles = useMemo<PortalArticle[]>(() => {
-    const dbArticles = Array.isArray(dbArticleData) ? dbArticleData : [];
-    const dynamic = dbArticles
-      .filter((article) => article.status === "Published" || !article.status)
-      .map((article) => ({
-        slug: article.slug,
-        title: article.title,
-        description: article.description || "Read the complete notification, important dates and official instructions.",
-        category: normaliseCategory(article.category || article.vertical || ""),
-        createdAt: article.created_at,
-        tags: article.tags || [],
-        isNew: Date.now() - new Date(article.created_at).getTime() < 7 * 86400000,
-      }));
-    const fallback = sarkariArticles.map((article) => ({
-      slug: article.slug,
-      title: article.title,
-      description: article.excerpt,
-      category: article.category,
-      createdAt: article.publishedAt,
-      tags: article.tags,
-      isNew: true,
-    }));
-    const seen = new Set<string>();
-    return [...dynamic, ...fallback].filter((article) => !seen.has(article.slug) && seen.add(article.slug));
-  }, [dbArticleData]);
+  useEffect(() => setQuery(searchTerm), [searchTerm]);
 
-  const filtered = useMemo(() => {
-    const needle = (params.get("q") || "").trim().toLowerCase();
-    return articles.filter((article) => {
-      const categoryMatches = !activeCategory || article.category === activeCategory;
-      const queryMatches = !needle || `${article.title} ${article.description} ${article.tags.join(" ")}`.toLowerCase().includes(needle);
-      return categoryMatches && queryMatches;
-    });
-  }, [activeCategory, articles, params]);
+  const pageTitle = tagTerm
+    ? `${tagTerm.replace(/[-_]+/g, " ")} - Government Updates | Sarkari DekhoCampus`
+    : activeCategory
+      ? `${activeCategory} - Latest Government Updates | Sarkari DekhoCampus`
+      : "Sarkari DekhoCampus - Latest Jobs, Results & Admit Cards";
+  const canonicalPath = tagTerm
+    ? `/news/tag/${encodeURIComponent(tagTerm)}`
+    : activeCategory
+      ? `/?category=${encodeURIComponent(activeCategory)}${currentPage > 1 ? `&page=${currentPage}` : ""}`
+      : location.pathname === "/news" ? "/news" : "/";
 
-  const groups = useMemo(() => sarkariCategories.map((category) => ({
+  const headlineArticles = useMemo(
+    () => (homeQuery.data?.latest || []).map(toPortalArticle),
+    [homeQuery.data?.latest]
+  );
+  const groups = useMemo(() => SARKARI_CATEGORIES.map((category) => ({
     category,
-    items: articles.filter((article) => article.category === category).slice(0, 9),
-  })).filter((group) => group.items.length), [articles]);
+    items: (homeQuery.data?.byCategory[category] || []).map(toPortalArticle),
+  })).filter((group) => group.items.length), [homeQuery.data?.byCategory]);
+  const archiveArticles = useMemo(
+    () => (archiveQuery.data?.rows || []).map(toPortalArticle),
+    [archiveQuery.data?.rows]
+  );
 
   const submitSearch = (event: React.FormEvent) => {
     event.preventDefault();
     const next = new URLSearchParams(params);
     if (query.trim()) next.set("q", query.trim());
     else next.delete("q");
+    next.delete("page");
     setParams(next);
   };
 
-  const headlineArticles = articles.slice(0, 9);
   const alertChannelUrl = String(import.meta.env.VITE_ALERT_CHANNEL_URL || "").trim();
-  const visibleGroups = activeCategory || params.get("q")
-    ? [{ category: activeCategory || "Search results", items: filtered }]
+  const visibleGroups = hasFilters
+    ? [{ category: activeCategory || (tagTerm ? `Topic: ${tagTerm}` : "Search results"), items: archiveArticles }]
     : groups;
+  const archiveHref = (page: number) => {
+    const next = new URLSearchParams(params);
+    if (page > 1) next.set("page", String(page));
+    else next.delete("page");
+    const queryString = next.toString();
+    return `${location.pathname}${queryString ? `?${queryString}` : ""}`;
+  };
 
   return (
     <div className="sarkari-site">
@@ -240,7 +240,7 @@ export default function Index() {
               <p>Choose one clear next step.</p>
             </div>
             <div className="sarkari-category-dock">
-              {sarkariCategories.map((category, index) => {
+              {SARKARI_CATEGORIES.map((category, index) => {
                 const Icon = categoryIcons[index];
                 const guidance = categoryGuidance[category];
                 return (
@@ -254,53 +254,59 @@ export default function Index() {
             </div>
           </section>
 
-          <section className="sarkari-alert-strip" aria-label="Latest alerts">
-            <strong><BellRing /> Latest alerts</strong>
-            <div>{headlineArticles.slice(0, 4).map((article, index) => <span key={article.slug}><Link to={`/news/${article.slug}`}>{article.title}</Link>{index < 3 && <i>•</i>}</span>)}</div>
-          </section>
+          {!hasFilters && headlineArticles.length > 0 && (
+            <>
+              <section className="sarkari-alert-strip" aria-label="Latest alerts">
+                <strong><BellRing /> Latest alerts</strong>
+                <div>{headlineArticles.slice(0, 4).map((article, index) => <span key={article.slug}><Link to={`/news/${article.slug}`}>{article.title}</Link>{index < Math.min(3, headlineArticles.length - 1) && <i>•</i>}</span>)}</div>
+              </section>
 
-          <section className="sarkari-trending" aria-labelledby="trending-heading">
-            <div className="sarkari-section-heading">
-              <div><span>Updated daily</span><h2 id="trending-heading">Trending government updates</h2></div>
-              <Link to="/?category=Latest%20Jobs">View all <ArrowRight /></Link>
-            </div>
-            <div className="sarkari-trending-grid">
-              <SarkariCarousel ariaLabel="Trending government updates">
-              {headlineArticles.slice(0, 9).map((article) => (
-                <Link className="sarkari-trending-card" key={article.slug} to={`/news/${article.slug}`}>
-                  <div><span>{article.category}</span>{article.isNew && <em>New</em>}</div>
-                  <h3>{article.title}</h3>
-                  <p>{article.description}</p>
-                  <footer><time dateTime={article.createdAt}>{shortDate.format(new Date(article.createdAt))}</time><ArrowRight /></footer>
-                </Link>
-              ))}
-              </SarkariCarousel>
-            </div>
-          </section>
+              <section className="sarkari-trending" aria-labelledby="trending-heading">
+                <div className="sarkari-section-heading">
+                  <div><span>Updated daily</span><h2 id="trending-heading">Trending government updates</h2></div>
+                  <Link to="/?category=Latest%20Jobs">View all <ArrowRight /></Link>
+                </div>
+                <div className="sarkari-trending-grid">
+                  <SarkariCarousel ariaLabel="Trending government updates">
+                  {headlineArticles.slice(0, SARKARI_ARCHIVE_PAGE_SIZE).map((article) => (
+                    <Link className="sarkari-trending-card" key={article.slug} to={`/news/${article.slug}`}>
+                      <div><span>{article.category}</span>{article.isNew && <em>New</em>}</div>
+                      <h3>{article.title}</h3>
+                      <p>{article.description}</p>
+                      <footer><time dateTime={article.createdAt}>{shortDate.format(new Date(article.createdAt))}</time><ArrowRight /></footer>
+                    </Link>
+                  ))}
+                  </SarkariCarousel>
+                </div>
+              </section>
+            </>
+          )}
 
-          {(activeCategory || params.get("q")) && (
+          {hasFilters && (
           <div className="sarkari-filter-summary" role="status" aria-live="polite">
-            <p>Showing <strong>{filtered.length}</strong> update{filtered.length === 1 ? "" : "s"}{activeCategory ? ` in ${activeCategory}` : ""}{params.get("q") ? ` for “${params.get("q")}”` : ""}</p>
+            <p>Showing <strong>{archiveArticles.length}</strong> update{archiveArticles.length === 1 ? "" : "s"}{activeCategory ? ` in ${activeCategory}` : ""}{tagTerm ? ` tagged “${tagTerm}”` : ""}{searchTerm ? ` for “${searchTerm}”` : ""}{currentPage > 1 ? ` on page ${currentPage}` : ""}</p>
             <Link to="/">Clear filters</Link>
           </div>
         )}
 
-          {isLoading && !articles.length ? (
+          {loadError ? (
+          <div className="sarkari-empty" role="alert">We could not load the latest updates. Please try again shortly.</div>
+        ) : isLoading ? (
           <div className="sarkari-loading">Loading latest updates...</div>
-        ) : (
+        ) : visibleGroups.length ? (
           <section className="sarkari-update-sections" aria-label="Latest updates by category">
             {visibleGroups.map((group, groupIndex) => (
               <section className="sarkari-update-row" key={group.category}>
                 <div className="sarkari-update-row-heading">
                   <span>{groupIndex % 3 === 0 ? <CalendarDays /> : groupIndex % 3 === 1 ? <FileCheck2 /> : <CheckCircle2 />}</span>
                   <div><small>Latest section</small><h2>{group.category}</h2></div>
-                  <Link to={`/?category=${encodeURIComponent(group.category)}`}>View all <ArrowRight /></Link>
+                  {!hasFilters && <Link to={`/?category=${encodeURIComponent(group.category)}`}>View all <ArrowRight /></Link>}
                 </div>
                 {group.items.length ? (
                   <SarkariCarousel ariaLabel={`${group.category} updates`}>
                     {group.items.slice(0, 9).map((article) => (
                       <Link className="sarkari-update-card" key={article.slug} to={`/news/${article.slug}`}>
-                        <div><span>{group.category}</span>{article.isNew && <em>New</em>}</div>
+                        <div><span>{article.category}</span>{article.isNew && <em>New</em>}</div>
                         <h3>{article.title}</h3>
                         <p>{article.description}</p>
                         <footer><time dateTime={article.createdAt}>{shortDate.format(new Date(article.createdAt))}</time><ArrowRight /></footer>
@@ -310,10 +316,17 @@ export default function Index() {
                 ) : <p className="sarkari-empty">No matching updates found.</p>}
               </section>
             ))}
+            {hasFilters && (currentPage > 1 || archiveQuery.data?.hasNextPage) && (
+              <nav className="sarkari-archive-pagination" aria-label="Update results pages">
+                {currentPage > 1 ? <Link to={archiveHref(currentPage - 1)}>Previous</Link> : <span aria-hidden="true" />}
+                <span>Page {currentPage}</span>
+                {archiveQuery.data?.hasNextPage ? <Link to={archiveHref(currentPage + 1)}>Next</Link> : <span aria-hidden="true" />}
+              </nav>
+            )}
           </section>
-        )}
+        ) : <div className="sarkari-empty">No published updates are available yet.</div>}
 
-          {!activeCategory && !params.get("q") && (
+          {!hasFilters && (
             <section className="sarkari-discovery" aria-label="Browse government jobs">
               {directoryGroups.map(({ eyebrow, title, icon: Icon, items }) => {
                 const expanded = Boolean(expandedDirectories[title]);
