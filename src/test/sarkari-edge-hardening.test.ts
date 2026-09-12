@@ -115,6 +115,22 @@ describe("Sarkari Pages edge contract", () => {
     expect(prerenderScript).toContain("if (originalNodeEnv === undefined) delete process.env.NODE_ENV");
     expect(prerenderScript.indexOf("vite = await createServer")).toBeGreaterThan(prerenderScript.indexOf("try {"));
 
+    const criticalCssScript = read("scripts/apply-home-critical-css.mjs");
+    expect(criticalCssScript).toContain("24 * 1024");
+    expect(criticalCssScript).toContain("6 * 1024");
+    expect(criticalCssScript).toContain('window.location.pathname === "/" && window.location.search === ""');
+    expect(criticalCssScript).toContain('full.addEventListener("load"');
+    expect(criticalCssScript).toContain('data-sarkari-full-css-fallback');
+    expect(criticalCssScript).toContain('".sarkari-site :focus-visible"');
+    expect(criticalCssScript).toContain('".sarkari-skip-link:focus"');
+    expect(criticalCssScript).toContain("unsupported statement @");
+    expect(criticalCssScript).toContain("unsupported direct declaration inside @");
+    expect(criticalCssScript).not.toMatch(/\bonload\s*=/i);
+    expect(read("package.json")).toContain("node scripts/apply-home-critical-css.mjs");
+
+    const articleFunction = read("functions/news/[slug].ts");
+    expect(articleFunction).toContain("restoreBlockingStylesheetFromHomeCriticalCss");
+
     const app = read("src/App.tsx");
     expect(app).toContain('<OptionalIntegrationBoundary name="site-integrations">');
     expect(app).toContain("<SiteIntegrations />");

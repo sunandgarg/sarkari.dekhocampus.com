@@ -7,7 +7,11 @@ import {
   validatePublicSarkariArticle,
   type PublicSarkariArticle,
 } from "../../src/lib/sarkariArticleBootstrap";
-import { ARTICLE_SHELL_PATH, stripHomePrerenderFromHtml } from "../../src/lib/homePrerender";
+import {
+  ARTICLE_SHELL_PATH,
+  restoreBlockingStylesheetFromHomeCriticalCss,
+  stripHomePrerenderFromHtml,
+} from "../../src/lib/homePrerender";
 
 const SITE_URL = "https://sarkari.dekhocampus.com";
 const DEFAULT_API_URL = "https://aws-origin.dekhocampus.com";
@@ -110,7 +114,8 @@ export function renderArticleHtml(template: string, article: ArticleRow) {
     mainEntityOfPage: canonical,
   };
 
-  let html = stripHomePrerenderFromHtml(template).replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(titleText)}</title>`);
+  let html = restoreBlockingStylesheetFromHomeCriticalCss(stripHomePrerenderFromHtml(template))
+    .replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(titleText)}</title>`);
   html = html.replace(/<link\b(?=[^>]*\brel\s*=\s*["']canonical["'])[^>]*>\s*/gi, "");
   for (const name of ["description", "keywords", "robots", "twitter:card", "twitter:title", "twitter:description", "twitter:url", "twitter:image", "twitter:image:alt"]) {
     html = removeMeta(html, "name", name);

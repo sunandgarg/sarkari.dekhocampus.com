@@ -4,11 +4,14 @@ import { hydrateRoot, type Root } from "react-dom/client";
 import App from "@/App";
 import { renderHomePrerender } from "@/entry-server";
 import {
+  HOME_CRITICAL_CSS_END,
+  HOME_CRITICAL_CSS_START,
   HOME_PRERENDER_END,
   HOME_PRERENDER_IDENTIFIER_PREFIX,
   HOME_PRERENDER_START,
   hasHydratableHomePrerender,
   isExactHomeLocation,
+  restoreBlockingStylesheetFromHomeCriticalCss,
   stripHomePrerenderFromHtml,
 } from "@/lib/homePrerender";
 
@@ -91,5 +94,13 @@ describe("Sarkari exact-home prerender", () => {
     expect(stripped).toBe('<body><div id="root"></div><script type="module"></script></body>');
     expect(stripped).not.toContain("home only");
     expect(() => stripHomePrerenderFromHtml(`${HOME_PRERENDER_START}<div id="root"></div>`)).toThrow(/Malformed/);
+  });
+
+  it("restores one ordinary blocking stylesheet from the exact-home CSS gate", () => {
+    const blocking = '<link rel="stylesheet" crossorigin href="/assets/index-test.css">';
+    const gated = `<head>${HOME_CRITICAL_CSS_START}<style data-sarkari-home-critical media="not all">body{margin:0}</style><link rel="stylesheet" href="/assets/index-test.css" media="print" blocking="render" data-sarkari-full-stylesheet><script data-sarkari-home-css-gate>gate()</script><noscript data-sarkari-full-css-fallback>${blocking}</noscript>${HOME_CRITICAL_CSS_END}</head>`;
+    expect(restoreBlockingStylesheetFromHomeCriticalCss(gated)).toBe(`<head>${blocking}</head>`);
+    expect(() => restoreBlockingStylesheetFromHomeCriticalCss(`${HOME_CRITICAL_CSS_START}<style></style>${HOME_CRITICAL_CSS_END}`)).toThrow(/fallback/);
+    expect(() => restoreBlockingStylesheetFromHomeCriticalCss(`${HOME_CRITICAL_CSS_START}<noscript data-sarkari-full-css-fallback><link rel="stylesheet" href="/assets/index.css" media="print"></noscript>${HOME_CRITICAL_CSS_END}`)).toThrow(/invalid/);
   });
 });

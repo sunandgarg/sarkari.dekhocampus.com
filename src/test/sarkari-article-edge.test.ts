@@ -8,6 +8,8 @@ import {
 } from "@/lib/sarkariArticleBootstrap";
 import {
   ARTICLE_SHELL_PATH,
+  HOME_CRITICAL_CSS_END,
+  HOME_CRITICAL_CSS_START,
   HOME_PRERENDER_END,
   HOME_PRERENDER_START,
 } from "@/lib/homePrerender";
@@ -106,6 +108,22 @@ describe("Sarkari article Pages Function", () => {
     expect(html).not.toContain(HOME_PRERENDER_END);
     expect(html).toContain("Railway Clerk &lt;2026&gt;</h1>");
     expect(html).toContain(`id="${SARKARI_ARTICLE_BOOTSTRAP_ID}" type="application/json"`);
+  });
+
+  it("removes an exact-home CSS gate and restores one blocking article stylesheet", () => {
+    const blocking = '<link rel="stylesheet" crossorigin href="/assets/index-test.css">';
+    const gatedTemplate = template.replace(
+      "</head>",
+      `${HOME_CRITICAL_CSS_START}<style data-sarkari-home-critical media="not all">body{margin:0}</style><link rel="stylesheet" href="/assets/index-test.css" media="print" blocking="render" data-sarkari-full-stylesheet><script data-sarkari-home-css-gate>gate()</script><noscript data-sarkari-full-css-fallback>${blocking}</noscript>${HOME_CRITICAL_CSS_END}</head>`,
+    );
+    const html = renderArticleHtml(gatedTemplate, article);
+    const stylesheets = html.match(/<link\b(?=[^>]*\brel=["']stylesheet["'])[^>]*>/gi) || [];
+    expect(stylesheets).toEqual([blocking]);
+    expect(html).not.toContain(HOME_CRITICAL_CSS_START);
+    expect(html).not.toContain("data-sarkari-home-critical");
+    expect(html).not.toContain("data-sarkari-home-css-gate");
+    expect(html).toContain(`id="${SARKARI_ARTICLE_BOOTSTRAP_ID}" type="application/json"`);
+    expect(html.indexOf('src="/assets/app.js"')).toBeLessThan(html.indexOf(`id="${SARKARI_ARTICLE_BOOTSTRAP_ID}"`));
   });
 
   it("queries only published, active Sarkari content and returns a real 404 for an unknown slug", async () => {

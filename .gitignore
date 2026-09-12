@@ -52,6 +52,7 @@ scripts/*
 !scripts/generate-sitemap.ts
 !scripts/prerender-home.ts
 !scripts/check-home-prerender.mjs
+!scripts/apply-home-critical-css.mjs
 
 # Editor directories and files
 .vscode/*
