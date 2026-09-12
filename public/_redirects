@@ -11,5 +11,5 @@
 # Preserve only the supported single-segment public routes. A top-level 404.html
 # handles everything else, so missing JS/CSS under /assets never receives the
 # application shell with a misleading 200 response.
-/news/tag/:tag /index.html 200
+/news/tag/:tag / 200
 /news/:slug /index.html 200

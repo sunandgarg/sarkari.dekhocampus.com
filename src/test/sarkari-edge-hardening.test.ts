@@ -25,7 +25,7 @@ describe("Sarkari Pages edge contract", () => {
     const redirects = read("public/_redirects");
     expect(redirects).toContain("/news / 301");
     expect(redirects).toContain("/news/:slug /index.html 200");
-    expect(redirects).toContain("/news/tag/:tag /index.html 200");
+    expect(redirects).toContain("/news/tag/:tag / 200");
     expect(redirects).not.toContain("/news/* /index.html 200");
     expect(redirects).not.toMatch(/^\/\* \/index\.html 200$/m);
 
