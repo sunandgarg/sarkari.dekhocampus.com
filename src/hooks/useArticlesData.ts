@@ -1,6 +1,5 @@
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { backendClient } from "@/integrations/backend/client";
-import { toast } from "sonner";
 import { SARKARI_SITE_SCOPE } from "@/lib/siteScope";
 import { runWithConcurrency } from "@/lib/runWithConcurrency";
 import {
@@ -15,6 +14,14 @@ export { PUBLIC_ARTICLE_DETAIL_FIELDS, PUBLIC_ARTICLE_LIST_FIELDS } from "@/lib/
 
 function isPendingReview(response: { status?: number | null }) {
   return response.status === 202;
+}
+
+function notifyArticleMutation(kind: "success" | "error", message: string) {
+  // Admin-only mutation feedback must not pull Sonner into the public
+  // homepage entry chunk, which imports the read hooks from this module.
+  void import("sonner")
+    .then(({ toast }) => toast[kind](message))
+    .catch(() => console.warn(JSON.stringify({ event: "sarkari_admin_toast_load_failed" })));
 }
 
 export type DbArticle = PublicSarkariArticle;
@@ -292,9 +299,9 @@ export function useSaveArticle() {
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ["db-articles"] });
       qc.invalidateQueries({ queryKey: ["db-articles-admin"] });
-      toast.success(result.pendingReview ? "Article draft submitted for admin review." : "Article saved!");
+      notifyArticleMutation("success", result.pendingReview ? "Article draft submitted for admin review." : "Article saved!");
     },
-    onError: (e) => toast.error(`Failed: ${e.message}`),
+    onError: (e) => notifyArticleMutation("error", `Failed: ${e.message}`),
   });
 }
 
@@ -312,8 +319,8 @@ export function useDeleteArticle() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["db-articles"] });
       qc.invalidateQueries({ queryKey: ["db-articles-admin"] });
-      toast.success("Article deleted!");
+      notifyArticleMutation("success", "Article deleted!");
     },
-    onError: (e) => toast.error(`Failed: ${e.message}`),
+    onError: (e) => notifyArticleMutation("error", `Failed: ${e.message}`),
   });
 }

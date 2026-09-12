@@ -63,9 +63,9 @@ export function savePrefillCookie(data: PrefillCookie) {
   } catch {}
 }
 
-export function CookieConsent() {
-  const [open, setOpen] = useState(false);
-  const [showCustom, setShowCustom] = useState(false);
+export function CookieConsent({ initiallyOpen = false }: { initiallyOpen?: boolean } = {}) {
+  const [open, setOpen] = useState(initiallyOpen);
+  const [showCustom, setShowCustom] = useState(initiallyOpen);
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
 
   useEffect(() => {
@@ -86,6 +86,13 @@ export function CookieConsent() {
     }
     return () => window.removeEventListener(COOKIE_SETTINGS_OPEN_EVENT, openSettings);
   }, []);
+
+  useEffect(() => {
+    if (!initiallyOpen) return;
+    setPrefs(getPrefs());
+    setShowCustom(true);
+    setOpen(true);
+  }, [initiallyOpen]);
 
   const persist = (consent: "accepted" | "essential" | "rejected", finalPrefs: Prefs) => {
     localStorage.setItem(COOKIE_KEY, consent);

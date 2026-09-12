@@ -29,6 +29,7 @@ import { useStatesAndCities } from "@/hooks/useLocations";
 import { CSVTools } from "@/components/CSVTools";
 import { useDraftState } from "@/hooks/useDraftState";
 import { resetBootstrap } from "@/lib/bootstrap";
+import { AD_GRADIENT_OPTIONS as COLOR_OPTIONS } from "@/lib/adGradients";
 // ─── Friendly labels ───────────────────────────────────────────────────
 
 const AUDIENCE_OPTIONS = [
@@ -67,19 +68,6 @@ const PLACEMENT_OPTIONS = [
   { value: "sidebar", label: "Sidebar" },
   { value: "top", label: "Top of Content" },
   { value: "bottom", label: "Bottom of Content" },
-] as const;
-
-const COLOR_OPTIONS = [
-  { value: "from-violet-600 to-purple-600", label: "Purple" },
-  { value: "from-teal-500 to-emerald-500", label: "Teal" },
-  { value: "from-amber-500 to-orange-500", label: "Orange" },
-  { value: "from-rose-500 to-pink-500", label: "Pink" },
-  { value: "from-blue-500 to-indigo-500", label: "Blue" },
-  { value: "from-green-500 to-teal-500", label: "Green" },
-  { value: "from-red-500 to-rose-500", label: "Red" },
-  { value: "from-cyan-500 to-blue-500", label: "Cyan" },
-  { value: "from-slate-700 to-slate-900", label: "Dark" },
-  { value: "from-pink-500 to-violet-500", label: "Magenta" },
 ] as const;
 
 function audienceLabel(type: string) {

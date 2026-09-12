@@ -18,8 +18,9 @@
     "test:e2e": "playwright test",
     "brand:icons": "node scripts/generate-brand-icons.mjs",
     "check:typography": "node scripts/check-no-large-dashes.mjs",
-    "prebuild": "npm run check:typography",
-    "postbuild": "tsx scripts/generate-sitemap.ts && tsx scripts/apply-site-metadata.ts",
+    "check:tailwind-content": "node scripts/check-tailwind-public-content.mjs",
+    "prebuild": "npm run check:typography && npm run check:tailwind-content",
+    "postbuild": "tsx scripts/generate-sitemap.ts && tsx scripts/apply-site-metadata.ts && node scripts/check-tailwind-public-content.mjs --dist",
     "deploy:prod": "bash scripts/deploy-prod.sh"
   },
   "dependencies": {

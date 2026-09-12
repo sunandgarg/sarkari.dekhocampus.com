@@ -25,4 +25,13 @@ describe("public Sarkari release boundaries", () => {
     expect(hookSource).toMatch(/\.eq\("is_active", true\)/);
     expect(hookSource).toMatch(/\.limit\(SARKARI_ARCHIVE_PAGE_SIZE\)/);
   });
+
+  it("keeps notification and tooltip libraries out of the homepage entry path", () => {
+    expect(appSource).not.toContain('from "@/components/ui/toaster"');
+    expect(appSource).not.toContain('from "@/components/ui/sonner"');
+    expect(appSource).not.toContain('from "@/components/ui/tooltip"');
+    expect(hookSource).not.toMatch(/^import .* from "sonner";/m);
+    expect(hookSource).toContain('void import("sonner")');
+    expect(articleSource).toContain('import { Toaster as Sonner } from "@/components/ui/sonner"');
+  });
 });

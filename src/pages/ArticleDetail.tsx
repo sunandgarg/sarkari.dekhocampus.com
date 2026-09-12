@@ -17,6 +17,7 @@ import { useDbArticle, useRelatedSarkariArticles } from "@/hooks/useArticlesData
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
+import { Toaster as Sonner } from "@/components/ui/sonner";
 import { useSEO } from "@/hooks/useSEO";
 import { DocumentViewer } from "@/components/detail/DocumentViewer";
 import { RichText } from "@/components/detail/RichText";
@@ -348,6 +349,7 @@ export default function ArticleDetail() {
 
   return (
     <div className="sarkari-site min-h-screen bg-background">
+      <Sonner />
       {/* Reading progress bar */}
       <div className="fixed top-0 left-0 right-0 h-1 z-[60] bg-transparent">
         <div className="h-full bg-primary transition-[width] duration-150" style={{ width: `${progress}%` }} />

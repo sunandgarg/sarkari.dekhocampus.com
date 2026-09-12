@@ -1,13 +1,11 @@
 import { Suspense, useEffect } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { ChunkErrorBoundary } from "@/components/ChunkErrorBoundary";
 import { ScrollLockGuard } from "@/components/ScrollLockGuard";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { OptionalIntegrationBoundary } from "@/components/OptionalIntegrationBoundary";
+import { useDeferredOptionalRuntime } from "@/hooks/useDeferredOptionalRuntime";
 import { SITE_URL } from "@/lib/constant";
 import { lazyRetry } from "@/lib/lazyRetry";
 import Index from "./pages/Index";
@@ -62,39 +60,43 @@ function PageLoader() {
 }
 
 export default function App() {
+  const { showCookieConsent, openCookieSettingsOnMount, showConsentedServices } = useDeferredOptionalRuntime();
+
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+      <BrowserRouter>
+        {showCookieConsent && (
           <OptionalIntegrationBoundary name="cookie-consent">
-            <Suspense fallback={null}><CookieConsent /></Suspense>
+            <Suspense fallback={null}><CookieConsent initiallyOpen={openCookieSettingsOnMount} /></Suspense>
           </OptionalIntegrationBoundary>
-          <OptionalIntegrationBoundary name="site-integrations">
-            <Suspense fallback={null}><SiteIntegrations /></Suspense>
-          </OptionalIntegrationBoundary>
-          <OptionalIntegrationBoundary name="adsense">
-            <Suspense fallback={null}><AdsenseLoader /></Suspense>
-          </OptionalIntegrationBoundary>
-          <ScrollToTop />
-          <ScrollLockGuard />
-          <RouteSeoPolicy />
-          <ChunkErrorBoundary>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/news" element={<NewsArchiveRedirect />} />
-                <Route path="/news/tag/:tag" element={<Index />} />
-                <Route path="/news/:slug" element={<ArticleDetail />} />
-                <Route path="/articles" element={<LegacyArticleRoute />} />
-                <Route path="/articles/:slug" element={<LegacyArticleRoute />} />
-                <Route path="*" element={<SarkariNotFound />} />
-              </Routes>
-            </Suspense>
-          </ChunkErrorBoundary>
-        </BrowserRouter>
-      </TooltipProvider>
+        )}
+        {showConsentedServices && (
+          <>
+            <OptionalIntegrationBoundary name="site-integrations">
+              <Suspense fallback={null}><SiteIntegrations /></Suspense>
+            </OptionalIntegrationBoundary>
+            <OptionalIntegrationBoundary name="adsense">
+              <Suspense fallback={null}><AdsenseLoader /></Suspense>
+            </OptionalIntegrationBoundary>
+          </>
+        )}
+        <ScrollToTop />
+        <ScrollLockGuard />
+        <RouteSeoPolicy />
+        <ChunkErrorBoundary>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/news" element={<NewsArchiveRedirect />} />
+              <Route path="/news/tag/:tag" element={<Index />} />
+              <Route path="/news/:slug" element={<ArticleDetail />} />
+              <Route path="/articles" element={<LegacyArticleRoute />} />
+              <Route path="/articles/:slug" element={<LegacyArticleRoute />} />
+              <Route path="*" element={<SarkariNotFound />} />
+            </Routes>
+          </Suspense>
+        </ChunkErrorBoundary>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 }

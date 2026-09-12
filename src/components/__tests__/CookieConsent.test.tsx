@@ -47,6 +47,13 @@ describe("CookieConsent", () => {
     expect(screen.getByRole("button", { name: "Save preferences" })).toBeInTheDocument();
   });
 
+  it("preserves a settings request made before the deferred chunk mounts", () => {
+    localStorage.setItem(COOKIE_CONSENT_KEY, "essential");
+    render(<CookieConsent initiallyOpen />);
+    expect(screen.getByText("Personalisation (prefill)")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save preferences" })).toBeInTheDocument();
+  });
+
   it("does not read or write personal prefill data for legacy essential-only consent", () => {
     localStorage.setItem(COOKIE_CONSENT_KEY, "essential");
     localStorage.setItem(COOKIE_PREFS_KEY, JSON.stringify({ prefill: true, analytics: true, marketing: true }));

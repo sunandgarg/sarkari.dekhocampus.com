@@ -46,6 +46,7 @@ work/
 scripts/*
 !scripts/apply-site-metadata.ts
 !scripts/check-no-large-dashes.mjs
+!scripts/check-tailwind-public-content.mjs
 !scripts/deploy-prod.sh
 !scripts/generate-brand-icons.mjs
 !scripts/generate-sitemap.ts

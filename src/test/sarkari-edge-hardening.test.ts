@@ -94,7 +94,8 @@ describe("Sarkari Pages edge contract", () => {
     expect(app).toContain('<OptionalIntegrationBoundary name="site-integrations">');
     expect(app).toContain("<SiteIntegrations />");
     expect(app).toContain("<AdsenseLoader />");
-    expect(app).toContain("<CookieConsent />");
+    expect(app).toContain("<CookieConsent initiallyOpen={openCookieSettingsOnMount} />");
+    expect(app).toContain("showConsentedServices &&");
     expect(index).not.toContain("googletagmanager.com/ns.html");
 
     const integrations = read("src/components/SiteIntegrations.tsx");

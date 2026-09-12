@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { ExternalLink, X } from "lucide-react";
 import { useState } from "react";
 import { useAds } from "@/hooks/useAds";
+import { normalizeAdGradient } from "@/lib/adGradients";
 
 interface DynamicAdBannerProps {
   variant?: "horizontal" | "vertical" | "square" | "leaderboard";
@@ -28,6 +29,7 @@ export function DynamicAdBanner({
   if (!isVisible || !ad) return null;
 
   const { title, subtitle, cta_text, link_url, bg_gradient, image_url } = ad;
+  const safeGradient = normalizeAdGradient(bg_gradient);
   const effectiveVariant = (variant || ad.variant || "horizontal") as NonNullable<DynamicAdBannerProps["variant"]>;
 
   const bgStyle = image_url
@@ -42,7 +44,7 @@ export function DynamicAdBanner({
         animate={{ opacity: 1, y: 0 }}
         data-ad-position={position}
         data-ad-variant={effectiveVariant}
-        className={`relative w-full bg-gradient-to-r ${bg_gradient} h-14 md:h-16 flex items-center justify-center px-4 overflow-hidden ${className}`}
+        className={`relative w-full bg-gradient-to-r ${safeGradient} h-14 md:h-16 flex items-center justify-center px-4 overflow-hidden ${className}`}
         style={bgStyle}
       >
         {image_url && <div className={`absolute inset-0 ${overlayClass}`} />}
@@ -75,7 +77,7 @@ export function DynamicAdBanner({
         viewport={{ once: true }}
         data-ad-position={position}
         data-ad-variant={effectiveVariant}
-        className={`relative w-full bg-gradient-to-r ${bg_gradient} h-24 md:h-28 rounded-2xl overflow-hidden ${className}`}
+        className={`relative w-full bg-gradient-to-r ${safeGradient} h-24 md:h-28 rounded-2xl overflow-hidden ${className}`}
         style={bgStyle}
       >
         {image_url && <div className={`absolute inset-0 ${overlayClass}`} />}
@@ -102,7 +104,7 @@ export function DynamicAdBanner({
         viewport={{ once: true }}
         data-ad-position={position}
         data-ad-variant={effectiveVariant}
-        className={`relative mx-auto w-full max-w-[300px] bg-gradient-to-b ${bg_gradient} min-h-[280px] rounded-2xl overflow-hidden flex flex-col justify-between p-5 ${className}`}
+        className={`relative mx-auto w-full max-w-[300px] bg-gradient-to-b ${safeGradient} min-h-[280px] rounded-2xl overflow-hidden flex flex-col justify-between p-5 ${className}`}
         style={bgStyle}
       >
         {image_url && <div className={`absolute inset-0 ${overlayClass}`} />}
@@ -126,7 +128,7 @@ export function DynamicAdBanner({
       viewport={{ once: true }}
       data-ad-position={position}
       data-ad-variant={effectiveVariant}
-      className={`relative mx-auto aspect-[6/5] w-full max-w-[336px] bg-gradient-to-br ${bg_gradient} rounded-2xl overflow-hidden flex flex-col items-center justify-center p-5 text-center ${className}`}
+      className={`relative mx-auto aspect-[6/5] w-full max-w-[336px] bg-gradient-to-br ${safeGradient} rounded-2xl overflow-hidden flex flex-col items-center justify-center p-5 text-center ${className}`}
       style={bgStyle}
     >
       {image_url && <div className={`absolute inset-0 ${overlayClass}`} />}
