@@ -144,9 +144,11 @@ export function CookieConsent() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           data-testid="cookie-consent-bar"
-          className="fixed inset-x-0 top-0 bottom-auto z-[120] pt-[env(safe-area-inset-top)] md:top-auto md:bottom-0 md:pt-0"
+          role="region"
+          aria-label="Cookie preferences"
+          className="fixed inset-x-0 bottom-0 top-auto z-[120] max-h-[82vh] max-h-[82dvh] overflow-y-auto"
         >
-          <div className="bg-card/95 backdrop-blur-xl border-b border-border shadow-2xl md:border-b-0 md:border-t">
+          <div className="rounded-t-2xl border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-2xl backdrop-blur-xl md:rounded-none">
             <div className="mx-auto max-w-7xl">
               <div className="p-3 sm:p-4 md:flex md:items-center md:gap-5">
                 <div className="flex min-w-0 items-start gap-3 md:flex-1 md:items-center">

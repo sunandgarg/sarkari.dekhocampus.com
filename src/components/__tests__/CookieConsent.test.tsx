@@ -12,13 +12,16 @@ describe("CookieConsent", () => {
 
   afterEach(() => vi.useRealTimers());
 
-  it("pins the consent bar to the mobile top and desktop bottom", () => {
+  it("uses a bounded bottom sheet with mobile safe-area spacing", () => {
     render(<CookieConsent />);
 
     act(() => vi.advanceTimersByTime(1_500));
 
     const bar = screen.getByTestId("cookie-consent-bar");
-    expect(bar).toHaveClass("top-0", "bottom-auto", "md:top-auto", "md:bottom-0");
+    expect(bar).toHaveClass("bottom-0", "top-auto", "max-h-[82vh]", "max-h-[82dvh]", "overflow-y-auto");
+    expect(bar).toHaveAttribute("role", "region");
+    expect(bar).toHaveAttribute("aria-label", "Cookie preferences");
+    expect(bar.firstElementChild).toHaveClass("pb-[env(safe-area-inset-bottom)]", "rounded-t-2xl");
     expect(screen.getByRole("button", { name: "Essential only" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Accept all" })).toBeInTheDocument();
   });
