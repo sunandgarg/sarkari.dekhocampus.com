@@ -30,6 +30,12 @@
 /news/*
   Cache-Control: no-cache, no-store, must-revalidate
 
+# Pages applies custom headers against the visitor URL, not the proxy target.
+# Keep excluded tag archives renderable when they proxy to the compact shell.
+/news/tag/*
+  Content-Type: text/html; charset=utf-8
+  X-Robots-Tag: noindex, nofollow, noarchive
+
 /admin/*
   Cache-Control: no-cache, no-store, must-revalidate
 

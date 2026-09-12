@@ -112,6 +112,9 @@ describe("Sarkari Pages edge contract", () => {
     expect(sourceHeaders).toContain("/__sarkari_article_shell.asset");
     expect(sourceHeaders).toContain("Content-Type: text/html; charset=utf-8");
     expect(sourceHeaders).toContain("X-Robots-Tag: noindex, nofollow, noarchive");
+    expect(sourceHeaders).toMatch(
+      /\/news\/tag\/\*[\s\S]*?Content-Type: text\/html; charset=utf-8[\s\S]*?X-Robots-Tag: noindex, nofollow, noarchive/,
+    );
 
     const footer = read("src/components/sarkari/SarkariFooter.tsx");
     expect(footer).toContain("Copyright © {__APP_BUILD_YEAR__}");

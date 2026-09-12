@@ -77,6 +77,10 @@ describe("Sarkari homepage feed Pages Function", () => {
     const init = origin.mock.calls[0][1] as RequestInit;
     expect(new Headers(init.headers).has("authorization")).toBe(false);
     expect(new Headers(init.headers).has("cookie")).toBe(false);
+    // Use the default follow policy for Pages runtime compatibility. It is safe
+    // because no browser credentials or secrets reach this fixed public
+    // endpoint, and the returned status and payload are validated strictly.
+    expect(init.redirect).toBeUndefined();
     expect(await response.json()).toEqual(feed());
   });
 

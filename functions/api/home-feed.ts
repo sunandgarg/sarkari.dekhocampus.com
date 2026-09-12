@@ -60,7 +60,6 @@ async function fetchOriginFeed(url: string) {
     const response = await fetch(url, {
       method: "GET",
       headers: { accept: "application/json" },
-      redirect: "error",
       signal: controller.signal,
     });
     if (!response.ok) throw new EdgeFeedError("origin_status", response.status);
