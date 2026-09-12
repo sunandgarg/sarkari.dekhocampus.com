@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useAdsenseSettings, useAdScripts } from "@/hooks/useAdsense";
+import { useCookiePreferences } from "@/hooks/useCookiePreferences";
 
 /**
  * Globally injects Google AdSense Auto Ads script + admin-managed custom
@@ -11,11 +12,12 @@ export function AdsenseLoader() {
   const { pathname } = useLocation();
   const { data: settings } = useAdsenseSettings();
   const { data: scripts } = useAdScripts();
+  const preferences = useCookiePreferences();
 
   const isAdmin = pathname.startsWith("/admin");
 
   useEffect(() => {
-    if (isAdmin || !settings || !settings.ads_globally_enabled) return;
+    if (isAdmin || !preferences.resolved || !preferences.marketing || !settings || !settings.ads_globally_enabled) return;
 
     // Defer heavy 3rd-party ad scripts until after LCP so they don't
     // block the main thread on first paint (huge PageSpeed win).
@@ -25,7 +27,8 @@ export function AdsenseLoader() {
       runInject();
     }, 5000);
 
-    const created: HTMLElement[] = [];
+    const created: Node[] = [];
+    const nonce = document.querySelector<HTMLScriptElement>("script[nonce]")?.nonce || "";
 
     function runInject() {
 
@@ -35,18 +38,43 @@ export function AdsenseLoader() {
       s.id = id;
       Object.entries(attrs).forEach(([k, v]) => s.setAttribute(k, v));
       if (code) s.text = code;
+      if (nonce) s.nonce = nonce;
       document.head.appendChild(s);
       created.push(s);
     };
 
     const addRawHtml = (id: string, html: string, target: "head" | "body") => {
       if (!html?.trim() || document.getElementById(id)) return;
-      const wrap = document.createElement("div");
-      wrap.id = id;
-      wrap.innerHTML = html;
+      const template = document.createElement("template");
+      template.innerHTML = html.trim();
       const dest = target === "head" ? document.head : document.body;
-      Array.from(wrap.childNodes).forEach((n) => dest.appendChild(n));
-      created.push(wrap);
+      const marker = target === "head" ? document.createElement("meta") : document.createElement("span");
+      marker.id = id;
+      if (marker instanceof HTMLSpanElement) marker.hidden = true;
+      dest.appendChild(marker);
+      created.push(marker);
+
+      const cloneExecutable = (source: Node): Node => {
+        if (source instanceof HTMLScriptElement) {
+          const active = document.createElement("script");
+          Array.from(source.attributes).forEach((attribute) => {
+            if (attribute.name.toLowerCase() !== "nonce") active.setAttribute(attribute.name, attribute.value);
+          });
+          if (nonce) active.nonce = nonce;
+          active.dataset.dcExecutable = "true";
+          active.textContent = source.textContent;
+          return active;
+        }
+        const clone = source.cloneNode(false);
+        source.childNodes.forEach((child) => clone.appendChild(cloneExecutable(child)));
+        return clone;
+      };
+
+      Array.from(template.content.childNodes).forEach((node) => {
+        const active = cloneExecutable(node);
+        dest.appendChild(active);
+        created.push(active);
+      });
     };
 
     // AdSense library
@@ -112,8 +140,11 @@ export function AdsenseLoader() {
       cancelled = true;
       window.clearTimeout(handle);
       created.forEach((el) => el.parentNode?.removeChild(el));
+      document.querySelectorAll(
+        'script[src*="googlesyndication.com"],script[src*="googleadservices.com"],iframe[src*="googlesyndication.com"],iframe[src*="doubleclick.net"]',
+      ).forEach((node) => node.remove());
     };
-  }, [isAdmin, settings, scripts]);
+  }, [isAdmin, preferences.marketing, preferences.resolved, settings, scripts]);
 
   return null;
 }

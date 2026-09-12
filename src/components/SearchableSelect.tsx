@@ -55,7 +55,7 @@ export function SearchableSelect({ options, value, onChange, placeholder, classN
         ref={btnRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full h-10 px-3 rounded-xl border border-border bg-card text-sm text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary/20"
+        className="h-11 w-full px-3 rounded-xl border border-border bg-card text-sm text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary/20"
       >
         <span className={value ? "text-foreground" : "text-muted-foreground"}>{value || placeholder}</span>
         <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
@@ -75,10 +75,10 @@ export function SearchableSelect({ options, value, onChange, placeholder, classN
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search..."
-                className="w-full pl-8 pr-7 py-1.5 text-sm bg-muted/50 rounded-lg border-0 focus:outline-none text-foreground placeholder:text-muted-foreground"
+                className="h-11 w-full pl-8 pr-11 text-sm bg-muted/50 rounded-lg border-0 focus:outline-none text-foreground placeholder:text-muted-foreground"
               />
               {search && (
-                <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2">
+                <button type="button" onClick={() => setSearch("")} className="absolute right-0 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center" aria-label="Clear search">
                   <X className="w-3.5 h-3.5 text-muted-foreground" />
                 </button>
               )}
@@ -94,7 +94,7 @@ export function SearchableSelect({ options, value, onChange, placeholder, classN
               <button
                 type="button"
                 onClick={() => { onChange(""); setIsOpen(false); setSearch(""); }}
-                className="w-full text-left px-3 py-2 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
+                className="min-h-11 w-full px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
               >
                 Clear selection
               </button>
@@ -107,7 +107,7 @@ export function SearchableSelect({ options, value, onChange, placeholder, classN
                   key={opt}
                   type="button"
                   onClick={() => { onChange(opt); setIsOpen(false); setSearch(""); }}
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/50 transition-colors ${opt === value ? "bg-primary/5 text-primary font-medium" : "text-foreground"}`}
+                  className={`min-h-11 w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors ${opt === value ? "bg-primary/5 text-primary font-medium" : "text-foreground"}`}
                 >
                   {opt}
                 </button>

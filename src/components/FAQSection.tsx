@@ -61,6 +61,8 @@ export function FAQSection({ page = "homepage", itemSlug, title = "Frequently As
       tag = document.createElement("script");
       tag.type = "application/ld+json";
       tag.id = id;
+      const nonce = document.querySelector<HTMLScriptElement>("script[nonce]")?.nonce || "";
+      if (nonce) tag.nonce = nonce;
       document.head.appendChild(tag);
     }
     tag.textContent = JSON.stringify(jsonLd);

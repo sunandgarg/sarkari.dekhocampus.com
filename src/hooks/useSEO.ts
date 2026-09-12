@@ -7,9 +7,12 @@ type SEOOptions = {
   keywords?: string;
   canonical?: string;
   ogImage?: string;
+  ogImageAlt?: string;
   ogType?: string;
+  twitterCard?: string;
   jsonLd?: object | object[];
   noIndex?: boolean;
+  enabled?: boolean;
 };
 
 export function useSEO({
@@ -18,20 +21,27 @@ export function useSEO({
   keywords,
   canonical,
   ogImage,
+  ogImageAlt,
   ogType = "website",
+  twitterCard,
   jsonLd,
   noIndex = false,
+  enabled = true,
 }: SEOOptions) {
   const jsonLdKey = JSON.stringify(jsonLd ?? null);
 
   useEffect(() => {
+    if (!enabled) return;
     if (title) {
       document.title = title.includes("DekhoCampus") ? title : `${title} | Sarkari DekhoCampus`;
     }
 
     const setNameMeta = (name: string, content?: string) => {
-      if (!content) return;
       let meta = document.querySelector(`meta[name="${name}"]`);
+      if (!content) {
+        meta?.remove();
+        return;
+      }
       if (!meta) {
         meta = document.createElement("meta");
         meta.setAttribute("name", name);
@@ -41,8 +51,11 @@ export function useSEO({
     };
 
     const setPropertyMeta = (property: string, content?: string) => {
-      if (!content) return;
       let meta = document.querySelector(`meta[property="${property}"]`);
+      if (!content) {
+        meta?.remove();
+        return;
+      }
       if (!meta) {
         meta = document.createElement("meta");
         meta.setAttribute("property", property);
@@ -58,16 +71,18 @@ export function useSEO({
     setNameMeta("robots", noIndex
       ? "noindex, nofollow, noarchive"
       : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1");
-    setNameMeta("twitter:card", imageUrl ? "summary_large_image" : "summary");
+    setNameMeta("twitter:card", twitterCard || (imageUrl ? "summary_large_image" : "summary"));
     setNameMeta("twitter:title", title);
     setNameMeta("twitter:description", description);
     setNameMeta("twitter:url", canonicalUrl);
     setNameMeta("twitter:image", imageUrl);
+    setNameMeta("twitter:image:alt", ogImageAlt);
     setPropertyMeta("og:title", title);
     setPropertyMeta("og:description", description);
     setPropertyMeta("og:url", canonicalUrl);
     setPropertyMeta("og:type", ogType);
     setPropertyMeta("og:image", imageUrl);
+    setPropertyMeta("og:image:alt", ogImageAlt);
 
     if (canonicalUrl) {
       let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
@@ -79,17 +94,19 @@ export function useSEO({
       link.href = canonicalUrl;
     }
 
+    const nonce = document.querySelector<HTMLScriptElement>("script[nonce]")?.nonce || "";
     document.getElementById("ld-json-page")?.remove();
     if (jsonLdKey !== "null") {
       const script = document.createElement("script");
       script.id = "ld-json-page";
       script.type = "application/ld+json";
       script.text = jsonLdKey;
+      if (nonce) script.nonce = nonce;
       document.head.appendChild(script);
     }
 
     return () => {
       document.title = "Sarkari DekhoCampus - Latest Jobs, Results & Admit Cards";
     };
-  }, [title, description, keywords, canonical, ogImage, ogType, jsonLdKey, noIndex]);
+  }, [title, description, keywords, canonical, ogImage, ogImageAlt, ogType, twitterCard, jsonLdKey, noIndex, enabled]);
 }

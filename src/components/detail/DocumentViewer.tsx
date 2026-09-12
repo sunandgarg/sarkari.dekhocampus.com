@@ -44,30 +44,30 @@ export function DocumentViewer({ images, title }: Props) {
         />
       </div>
       {/* Floating toolbar */}
-      <div className="absolute left-1/2 -translate-x-1/2 bottom-3 bg-foreground/90 backdrop-blur text-background rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-lg text-xs">
+      <div className="scrollbar-hide absolute bottom-3 left-1/2 flex max-w-[calc(100%-1rem)] -translate-x-1/2 items-center gap-1.5 overflow-x-auto rounded-full bg-foreground/90 px-2 py-1 text-xs text-background shadow-lg backdrop-blur">
         <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}
-          className="p-1 rounded-full hover:bg-white/15 disabled:opacity-40" aria-label="Previous page">
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-white/15 disabled:opacity-40" aria-label="Previous page">
           <ChevronLeft className="w-4 h-4" />
         </button>
         <span className="font-medium tabular-nums px-1">{page + 1} of {total}</span>
         <button onClick={() => setPage((p) => Math.min(total - 1, p + 1))} disabled={page === total - 1}
-          className="p-1 rounded-full hover:bg-white/15 disabled:opacity-40" aria-label="Next page">
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-white/15 disabled:opacity-40" aria-label="Next page">
           <ChevronRight className="w-4 h-4" />
         </button>
         <span className="w-px h-4 bg-white/30 mx-1" />
-        <button onClick={() => setZoom((z) => Math.max(50, z - 25))} className="p-1 rounded-full hover:bg-white/15" aria-label="Zoom out">
+        <button onClick={() => setZoom((z) => Math.max(50, z - 25))} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-white/15" aria-label="Zoom out">
           <Minus className="w-4 h-4" />
         </button>
         <span className="font-medium tabular-nums px-0.5 min-w-[40px] text-center">{zoom}%</span>
-        <button onClick={() => setZoom((z) => Math.min(300, z + 25))} className="p-1 rounded-full hover:bg-white/15" aria-label="Zoom in">
+        <button onClick={() => setZoom((z) => Math.min(300, z + 25))} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-white/15" aria-label="Zoom in">
           <Plus className="w-4 h-4" />
         </button>
         <span className="w-px h-4 bg-white/30 mx-1" />
-        <button onClick={() => setFs((v) => !v)} className="p-1 rounded-full hover:bg-white/15" aria-label="Fullscreen">
+        <button onClick={() => setFs((v) => !v)} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-white/15" aria-label="Fullscreen">
           {fs ? <X className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
         </button>
         <a href={images[page]} download target="_blank" rel="noopener noreferrer"
-          className="p-1 rounded-full hover:bg-white/15" aria-label="Download current page">
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-white/15" aria-label="Download current page">
           <Download className="w-4 h-4" />
         </a>
       </div>

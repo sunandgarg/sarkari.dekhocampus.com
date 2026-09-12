@@ -32,18 +32,18 @@ export function LeadConsentCheckbox({
       <Checkbox
         checked={checked}
         onCheckedChange={(value) => onCheckedChange(value === true)}
-        className="mt-0.5 h-4 w-4 shrink-0"
+        className="relative mt-0.5 h-4 w-4 shrink-0 before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']"
         aria-label="Privacy and terms consent"
         aria-required="true"
         aria-invalid={invalid}
       />
       <span className={`${compact ? "text-[10px] leading-4" : "text-[11px] leading-tight"} ${dark ? "text-white/75" : "text-muted-foreground"} ${textClassName}`}>
         I agree to DekhoCampus{" "}
-        <a href={PRIVACY_POLICY_URL} className={linkClass} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+        <a href={PRIVACY_POLICY_URL} className={`inline-flex min-h-11 items-center ${linkClass}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
           Privacy Policy
         </a>{" "}
         and{" "}
-        <a href={TERMS_URL} className={linkClass} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+        <a href={TERMS_URL} className={`inline-flex min-h-11 items-center ${linkClass}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
           Terms & Conditions
         </a>
         . I may receive {purposeText} by call, SMS, WhatsApp or email, and I can opt out anytime.

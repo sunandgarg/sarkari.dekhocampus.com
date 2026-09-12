@@ -16,6 +16,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "brand:icons": "node scripts/generate-brand-icons.mjs",
     "check:typography": "node scripts/check-no-large-dashes.mjs",
     "prebuild": "npm run check:typography",
     "postbuild": "tsx scripts/generate-sitemap.ts && tsx scripts/apply-site-metadata.ts",

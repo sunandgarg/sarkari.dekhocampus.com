@@ -54,12 +54,12 @@ export function DynamicAdBanner({
             href={link_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-shrink-0 px-4 py-1.5 bg-accent text-accent-foreground text-sm font-semibold rounded-full hover:bg-accent/90 transition-colors"
+            className="inline-flex min-h-11 flex-shrink-0 items-center justify-center rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
             {cta_text}
           </a>
         </div>
-        <button onClick={() => setIsVisible(false)} className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-white/70 hover:text-white z-10" aria-label="Close ad">
+        <button onClick={() => setIsVisible(false)} className="absolute right-0 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-white/70 hover:text-white" aria-label="Close ad">
           <X className="w-4 h-4" />
         </button>
         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-white/50 uppercase tracking-wider z-10">Ad</span>
@@ -84,7 +84,7 @@ export function DynamicAdBanner({
             <h4 className="truncate text-base font-bold text-white md:text-xl">{title}</h4>
             {subtitle && <p className="truncate text-xs text-white/80 md:text-sm">{subtitle}</p>}
           </div>
-          <a href={link_url} target="_blank" rel="noopener noreferrer" className="flex shrink-0 items-center gap-1.5 rounded-xl bg-accent px-3 py-2 text-xs font-semibold text-accent-foreground shadow-lg transition-colors hover:bg-accent/90 md:px-5 md:py-2.5 md:text-base">
+          <a href={link_url} target="_blank" rel="noopener noreferrer" className="flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-lg transition-colors hover:bg-primary/90 md:px-5 md:py-2.5 md:text-base">
             {cta_text}
             <ExternalLink className="w-4 h-4" />
           </a>
@@ -111,7 +111,7 @@ export function DynamicAdBanner({
           <h4 className="text-xl font-bold text-white mb-2">{title}</h4>
           {subtitle && <p className="text-white/80 text-sm">{subtitle}</p>}
         </div>
-        <a href={link_url} target="_blank" rel="noopener noreferrer" className="relative w-full py-2.5 bg-accent text-accent-foreground font-semibold rounded-xl hover:bg-accent/90 transition-colors mt-4 text-center block">
+        <a href={link_url} target="_blank" rel="noopener noreferrer" className="relative mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-primary py-2.5 text-center font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
           {cta_text}
         </a>
       </motion.div>
@@ -134,7 +134,7 @@ export function DynamicAdBanner({
       <div className="relative">
         <h4 className="text-xl font-bold text-white mb-2">{title}</h4>
         {subtitle && <p className="text-white/80 text-sm mb-4">{subtitle}</p>}
-        <a href={link_url} target="_blank" rel="noopener noreferrer" className="px-6 py-2 bg-accent text-accent-foreground font-semibold rounded-xl hover:bg-accent/90 transition-colors">
+        <a href={link_url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-6 py-2 font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
           {cta_text}
         </a>
       </div>

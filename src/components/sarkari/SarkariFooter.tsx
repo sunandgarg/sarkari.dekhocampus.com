@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { SARKARI_NAV } from "./SarkariHeader";
+import { openCookieSettings } from "@/lib/promptSequence";
 
 export function SarkariFooter() {
   const year = new Date().getFullYear();
@@ -21,7 +22,10 @@ export function SarkariFooter() {
           <p>This is an independent information portal and is not affiliated with any government organisation. Always verify information on the official authority website.</p>
         </div>
       </div>
-      <div className="sarkari-footer-bottom">Copyright © {year} sarkari.dekhocampus.com · Information for reference only</div>
+      <div className="sarkari-footer-bottom">
+        <span>Copyright © {year} sarkari.dekhocampus.com · Information for reference only</span>
+        <button type="button" onClick={openCookieSettings}>Cookie settings</button>
+      </div>
     </footer>
   );
 }

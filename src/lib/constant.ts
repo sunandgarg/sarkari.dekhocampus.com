@@ -4,7 +4,7 @@ export const SITE_CONFIG = {
   scheme: "https",
   supportEmail: "outreach@dekhocampus.com",
   searchPath: "/",
-  ogImagePath: "/brand/dekhocampus-blog-logo.png",
+  ogImagePath: "/icon-512.png",
   logoPath: "/brand/dekhocampus-blog-logo.png",
 } as const;
 

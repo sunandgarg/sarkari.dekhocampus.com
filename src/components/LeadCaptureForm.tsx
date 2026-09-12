@@ -285,16 +285,16 @@ export function LeadCaptureForm({
       {step === 1 ? (
         <>
           <div className="space-y-1">
-            <Input value={formData.name} onChange={e => update("name", e.target.value)} placeholder="Your name *" aria-invalid={!!errors.name} className={`${compact ? "h-9" : "h-10"} rounded-xl ${dark ? "border-white/15 bg-white/10 text-white placeholder:text-white/60" : ""} ${errors.name ? "border-destructive" : ""}`} required />
+            <Input value={formData.name} onChange={e => update("name", e.target.value)} placeholder="Your name *" aria-invalid={!!errors.name} className={`h-11 rounded-xl ${dark ? "border-white/15 bg-white/10 text-white placeholder:text-white/60" : ""} ${errors.name ? "border-destructive" : ""}`} required />
             {errors.name && <p className={`text-xs ${dark ? "text-white" : "text-destructive"}`}>{errors.name}</p>}
           </div>
           <div className="space-y-1">
-            <Input value={formData.email} onChange={e => update("email", e.target.value)} placeholder="Email address *" type="email" aria-invalid={!!errors.email} className={`${compact ? "h-9" : "h-10"} rounded-xl ${dark ? "border-white/15 bg-white/10 text-white placeholder:text-white/60" : ""} ${errors.email ? "border-destructive" : ""}`} required />
+            <Input value={formData.email} onChange={e => update("email", e.target.value)} placeholder="Email address *" type="email" aria-invalid={!!errors.email} className={`h-11 rounded-xl ${dark ? "border-white/15 bg-white/10 text-white placeholder:text-white/60" : ""} ${errors.email ? "border-destructive" : ""}`} required />
             {errors.email && <p className={`text-xs ${dark ? "text-white" : "text-destructive"}`}>{errors.email}</p>}
           </div>
           <div className="space-y-1">
             <div className="flex items-stretch gap-2">
-              <Input value={formData.phone} onChange={e => update("phone", sanitizeIndianMobile(e.target.value))} placeholder="Mobile number *" type="tel" maxLength={10} className={`${compact ? "h-9" : "h-10"} min-w-0 flex-1 rounded-xl ${dark ? "border-white/15 bg-white/10 text-white placeholder:text-white/60" : ""}`} required />
+              <Input value={formData.phone} onChange={e => update("phone", sanitizeIndianMobile(e.target.value))} placeholder="Mobile number *" type="tel" maxLength={10} className={`h-11 min-w-0 flex-1 rounded-xl ${dark ? "border-white/15 bg-white/10 text-white placeholder:text-white/60" : ""}`} required />
               <div className={dark ? "[&_button]:!bg-white [&_button]:!text-slate-900" : ""}>{otp.getOtpButton}</div>
             </div>
             {formData.phone.length > 0 && !isValidIndianMobile(formData.phone) && <p className={`text-xs ${dark ? "text-white" : "text-destructive"}`}>{PHONE_HINT}</p>}
@@ -317,7 +317,7 @@ export function LeadCaptureForm({
         </>
       ) : (
         <>
-          <select value={formData.course} onChange={e => update("course", e.target.value)} className={`${selectCls} ${compact ? "h-9 py-1" : "h-10"} ${dark ? "border-white/15 bg-white/10 text-white [&>option]:text-slate-900" : ""} ${errors.course ? "border-destructive" : ""}`} required>
+          <select value={formData.course} onChange={e => update("course", e.target.value)} className={`${selectCls} h-11 ${compact ? "py-1" : ""} ${dark ? "border-white/15 bg-white/10 text-white [&>option]:text-slate-900" : ""} ${errors.course ? "border-destructive" : ""}`} required>
             <option value="">{interestPrompt} *</option>
             {interestOptions.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
@@ -330,7 +330,7 @@ export function LeadCaptureForm({
           {!hideProgramMode && <ProgramModeToggle value={programMode} onChange={setProgramMode} compact={compact} />}
         </>
       )}
-      <Button type="submit" className={`w-full rounded-xl ${compact ? "h-9" : "h-10"} ${dark ? "bg-white text-primary hover:bg-slate-100" : "bg-primary text-primary-foreground hover:bg-primary/90"}`} disabled={isLoading}>
+      <Button type="submit" className={`h-11 w-full rounded-xl ${dark ? "bg-white text-primary hover:bg-slate-100" : "bg-primary text-primary-foreground hover:bg-primary/90"}`} disabled={isLoading}>
         {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : step === 1 ? "Save & continue" : "Complete request"}
       </Button>
     </>

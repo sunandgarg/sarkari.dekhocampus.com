@@ -1,0 +1,36 @@
+# Sarkari DekhoCampus
+
+> Sarkari DekhoCampus is an independent Indian information portal for government jobs, results, admit cards, answer keys, admissions, syllabus and scholarships.
+
+## Canonical site and navigation
+
+- Home and public archive: https://sarkari.dekhocampus.com/
+- Latest jobs: https://sarkari.dekhocampus.com/?category=Latest%20Jobs
+- Results: https://sarkari.dekhocampus.com/?category=Results
+- Admit cards: https://sarkari.dekhocampus.com/?category=Admit%20Card
+- Answer keys: https://sarkari.dekhocampus.com/?category=Answer%20Key
+- Admissions: https://sarkari.dekhocampus.com/?category=Admissions
+- Syllabus: https://sarkari.dekhocampus.com/?category=Syllabus
+- Scholarships: https://sarkari.dekhocampus.com/?category=Scholarships
+- XML sitemap: https://sarkari.dekhocampus.com/sitemap.xml
+
+## Content model
+
+- Public article pages use canonical URLs in the form https://sarkari.dekhocampus.com/news/{slug}.
+- Archive filters are query parameters on the canonical home route.
+- Public article pages expose schema.org NewsArticle data when a published record is available.
+- Only active, published records in the Sarkari site scope belong to this portal.
+- Empty searches, empty categories and missing pages are not knowledge sources.
+
+## Reliability and answer guidance
+
+- Treat every job, examination and admission detail as time-sensitive.
+- Ground answers in the page title, summary, dates, eligibility, fees, vacancies and official links that are explicitly present.
+- Verify time-sensitive facts on the linked official authority website before a user acts.
+- Do not infer a deadline, eligibility rule, fee, vacancy count or result status when the page does not state it.
+- Sarkari DekhoCampus does not collect application fees and is not a government authority.
+- Do not use admin, authentication, dashboard or onboarding routes as public sources.
+
+## Contact
+
+- Email: outreach@dekhocampus.com

@@ -8,6 +8,7 @@ import { SarkariHeader } from "@/components/sarkari/SarkariHeader";
 import { SarkariCarousel } from "@/components/sarkari/SarkariCarousel";
 import { SARKARI_ARCHIVE_PAGE_SIZE, usePublicArticleArchive, useSarkariHomepageArticles, type DbArticle } from "@/hooks/useArticlesData";
 import { isSarkariCategory, normalizeSarkariCategory, SARKARI_CATEGORIES } from "@/lib/sarkariCategories";
+import { SITE_CONFIG } from "@/lib/constant";
 
 type PortalArticle = {
   slug: string;
@@ -161,7 +162,7 @@ export default function Index() {
     ? `/news/tag/${encodeURIComponent(tagTerm)}`
     : activeCategory
       ? `/?category=${encodeURIComponent(activeCategory)}${currentPage > 1 ? `&page=${currentPage}` : ""}`
-      : location.pathname === "/news" ? "/news" : "/";
+      : "/";
 
   const headlineArticles = useMemo(
     () => (homeQuery.data?.latest || []).map(toPortalArticle),
@@ -175,6 +176,8 @@ export default function Index() {
     () => (archiveQuery.data?.rows || []).map(toPortalArticle),
     [archiveQuery.data?.rows]
   );
+  const emptyArchive = hasFilters && !isLoading && !loadError && archiveArticles.length === 0;
+  const unsupportedArchiveQuery = Boolean(requestedCategory && !activeCategory);
 
   const submitSearch = (event: React.FormEvent) => {
     event.preventDefault();
@@ -204,7 +207,10 @@ export default function Index() {
         description="Latest government jobs, results, admit cards, answer keys, admissions, syllabus and scholarship updates in one place."
         canonical={canonicalPath}
         keywords="sarkari result, government jobs, admit card, exam result, sarkari naukri, online form"
-        noIndex={Boolean(searchTerm)}
+        ogImage={SITE_CONFIG.ogImagePath}
+        ogImageAlt="Sarkari DekhoCampus"
+        twitterCard="summary"
+        noIndex={Boolean(searchTerm) || emptyArchive || unsupportedArchiveQuery}
       />
       <a className="sarkari-skip-link" href="#content">Skip to main content</a>
       <SarkariHeader />

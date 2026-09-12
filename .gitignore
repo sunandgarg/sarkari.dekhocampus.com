@@ -31,7 +31,11 @@ work/
 /data/
 /db-export/
 /docs/
-/functions/
+/functions/*
+!/functions/_middleware.ts
+!/functions/news/
+/functions/news/*
+!/functions/news/\[slug\].ts
 /infra/
 /reports/
 /supabase/
@@ -43,6 +47,7 @@ scripts/*
 !scripts/apply-site-metadata.ts
 !scripts/check-no-large-dashes.mjs
 !scripts/deploy-prod.sh
+!scripts/generate-brand-icons.mjs
 !scripts/generate-sitemap.ts
 
 # Editor directories and files

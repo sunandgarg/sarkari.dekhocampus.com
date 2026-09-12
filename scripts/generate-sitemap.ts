@@ -5,8 +5,10 @@ import { loadEnv } from "vite";
 import { SITE_URL } from "../src/lib/constant";
 import { SARKARI_SITE_SCOPE } from "../src/lib/siteScope";
 import {
+  buildSarkariFixedSitemapEntries,
   buildSitemapDocuments,
   fetchPublishedArticleEntries,
+  type ArticleSitemapEntry,
   type SitemapEntry,
 } from "../src/lib/sarkariSitemapArticles";
 
@@ -17,7 +19,7 @@ const BASE_URL = (env.SITEMAP_BASE_URL || SITE_URL).replace(/\/+$/, "");
 const API_URL = (env.SITEMAP_API_URL === "none" ? "" : env.SITEMAP_API_URL || env.VITE_API_URL || "").replace(/\/+$/, "");
 const ALLOW_MISSING_ARTICLE_API = BUILD_MODE !== "production" && env.SITEMAP_ALLOW_MISSING_ARTICLE_API === "true";
 
-async function fetchPublishedArticles(): Promise<SitemapEntry[]> {
+async function fetchPublishedArticles(): Promise<ArticleSitemapEntry[]> {
   if (!API_URL && !ALLOW_MISSING_ARTICLE_API) {
     throw new Error("[sitemap] SITEMAP_API_URL (or VITE_API_URL) is required for a complete production sitemap");
   }
@@ -40,18 +42,11 @@ async function fetchPublishedArticles(): Promise<SitemapEntry[]> {
 }
 
 const dynamicArticles = await fetchPublishedArticles();
-const fixed: SitemapEntry[] = [
-  { path: "/", changefreq: "hourly", priority: "1.0" },
-  { path: "/news", changefreq: "hourly", priority: "0.9" },
-  ...["Latest Jobs", "Results", "Admit Card", "Answer Key", "Admissions", "Syllabus", "Scholarships"].map((category) => ({
-    path: `/?category=${encodeURIComponent(category)}`,
-    changefreq: "daily",
-    priority: "0.8",
-  })),
-];
+const fixed = buildSarkariFixedSitemapEntries(dynamicArticles);
+const articleEntries: SitemapEntry[] = dynamicArticles.map(({ category: _category, ...entry }) => entry);
 
 const unique = new Map<string, SitemapEntry>();
-for (const entry of [...fixed, ...dynamicArticles]) unique.set(entry.path, entry);
+for (const entry of [...fixed, ...articleEntries]) unique.set(entry.path, entry);
 const entries = [...unique.values()];
 const { indexXml, shards } = buildSitemapDocuments(BASE_URL, entries);
 const distDirectory = resolve("dist");

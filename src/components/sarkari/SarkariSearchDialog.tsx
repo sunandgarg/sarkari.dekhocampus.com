@@ -64,7 +64,7 @@ export function SarkariSearchDialog({ open, onOpenChange }: SarkariSearchDialogP
             <CommandSeparator />
             <CommandGroup heading="Popular searches">
               {popularSearches.map((label) => (
-                <CommandItem key={label} value={label} onSelect={() => go(`/?q=${encodeURIComponent(label)}`)} className="rounded-lg px-3 py-2.5">
+                <CommandItem key={label} value={label} onSelect={() => go(`/?q=${encodeURIComponent(label)}`)} className="min-h-11 rounded-lg px-3 py-2.5">
                   <Search className="mr-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
                   {label}
                   <CommandShortcut>Search</CommandShortcut>

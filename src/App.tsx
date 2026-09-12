@@ -7,12 +7,16 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ChunkErrorBoundary } from "@/components/ChunkErrorBoundary";
 import { ScrollLockGuard } from "@/components/ScrollLockGuard";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { OptionalIntegrationBoundary } from "@/components/OptionalIntegrationBoundary";
 import { SITE_URL } from "@/lib/constant";
 import { lazyRetry } from "@/lib/lazyRetry";
 import Index from "./pages/Index";
 
 const ArticleDetail = lazyRetry(() => import("./pages/ArticleDetail"), "ArticleDetail");
 const SarkariNotFound = lazyRetry(() => import("./pages/SarkariNotFound"), "SarkariNotFound");
+const SiteIntegrations = lazyRetry(() => import("@/components/SiteIntegrations").then((module) => ({ default: module.SiteIntegrations })), "SiteIntegrations");
+const AdsenseLoader = lazyRetry(() => import("@/components/ads/AdsenseLoader").then((module) => ({ default: module.AdsenseLoader })), "AdsenseLoader");
+const CookieConsent = lazyRetry(() => import("@/components/CookieConsent").then((module) => ({ default: module.CookieConsent })), "CookieConsent");
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,6 +27,11 @@ const queryClient = new QueryClient({
 function LegacyArticleRoute() {
   const { slug } = useParams<{ slug?: string }>();
   return <Navigate to={slug ? `/news/${slug}` : "/"} replace />;
+}
+
+function NewsArchiveRedirect() {
+  const { search } = useLocation();
+  return <Navigate to={`/${search}`} replace />;
 }
 
 function RouteSeoPolicy() {
@@ -49,7 +58,7 @@ function RouteSeoPolicy() {
 }
 
 function PageLoader() {
-  return <div className="min-h-screen bg-white flex items-center justify-center"><div className="w-8 h-8 border-3 border-red-800 border-t-transparent rounded-full animate-spin" /></div>;
+  return <div className="min-h-screen bg-background flex items-center justify-center"><div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 }
 
 export default function App() {
@@ -59,6 +68,15 @@ export default function App() {
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <OptionalIntegrationBoundary name="cookie-consent">
+            <Suspense fallback={null}><CookieConsent /></Suspense>
+          </OptionalIntegrationBoundary>
+          <OptionalIntegrationBoundary name="site-integrations">
+            <Suspense fallback={null}><SiteIntegrations /></Suspense>
+          </OptionalIntegrationBoundary>
+          <OptionalIntegrationBoundary name="adsense">
+            <Suspense fallback={null}><AdsenseLoader /></Suspense>
+          </OptionalIntegrationBoundary>
           <ScrollToTop />
           <ScrollLockGuard />
           <RouteSeoPolicy />
@@ -66,7 +84,7 @@ export default function App() {
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Index />} />
-                <Route path="/news" element={<Index />} />
+                <Route path="/news" element={<NewsArchiveRedirect />} />
                 <Route path="/news/tag/:tag" element={<Index />} />
                 <Route path="/news/:slug" element={<ArticleDetail />} />
                 <Route path="/articles" element={<LegacyArticleRoute />} />

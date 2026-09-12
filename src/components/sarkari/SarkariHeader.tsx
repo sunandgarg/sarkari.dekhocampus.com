@@ -48,7 +48,7 @@ export function SarkariHeader() {
     <>
       <header className="sarkari-header">
         <div className="sarkari-header-inner">
-          <Link to="/" className="sarkari-brand" aria-label="Sarkari DekhoCampus home">
+          <Link to="/" className="sarkari-brand" title="Sarkari DekhoCampus home">
             <span className="sarkari-emblem" aria-hidden="true">SD</span>
             <span className="sarkari-wordmark"><strong>Sarkari<span>DekhoCampus</span></strong><small>UPDATES &amp; ALERTS</small></span>
           </Link>

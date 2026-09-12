@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   ARTICLE_SITEMAP_PAGE_SIZE,
+  buildSarkariFixedSitemapEntries,
   buildSitemapDocuments,
   fetchPublishedArticleEntries,
   SITEMAP_MAX_URLS_PER_SHARD,
@@ -41,6 +42,7 @@ describe("Sarkari article sitemap pagination", () => {
       lastmod: "2026-09-10",
       changefreq: "daily",
       priority: "0.8",
+      category: "Latest Jobs",
     });
     expect(entries.at(-1)?.path).toBe("/news/job-1001");
     expect(fetchPage).toHaveBeenCalledTimes(2);
@@ -53,7 +55,22 @@ describe("Sarkari article sitemap pagination", () => {
     expect(firstUrl.searchParams.get("status")).toBe("eq.Published");
     expect(firstUrl.searchParams.get("is_active")).toBe("eq.true");
     expect(firstUrl.searchParams.get("order")).toBe("slug.asc");
+    expect(firstUrl.searchParams.get("select")).toBe("slug,updated_at,category,vertical");
     expect(secondUrl.searchParams.get("offset")).toBe("1000");
+  });
+
+  it("retains normalized categories so empty archives stay out of the sitemap", async () => {
+    const entries = await fetchPublishedArticleEntries({
+      apiUrl: "https://api.example.test",
+      siteScope: "sarkari",
+      fetchPage: async () => response([
+        { slug: "bank-result", category: "Exam Results" },
+        { slug: "railway-job", vertical: "Recruitment" },
+        { slug: "exam-result", category: "", vertical: "Exam Results" },
+      ], "0-2/3"),
+    });
+
+    expect(entries.map((entry) => entry.category)).toEqual(["Results", "Latest Jobs", "Results"]);
   });
 
   it("keeps paging when content-range reports more rows than a short page", async () => {
@@ -133,6 +150,18 @@ describe("Sarkari article sitemap pagination", () => {
 });
 
 describe("Sarkari sitemap shards", () => {
+  it("emits root only for an empty portal and only populated category archives otherwise", () => {
+    expect(buildSarkariFixedSitemapEntries([]).map((entry) => entry.path)).toEqual(["/"]);
+    expect(buildSarkariFixedSitemapEntries([
+      { path: "/news/result", changefreq: "daily", priority: "0.8", category: "Results" },
+      { path: "/news/job", changefreq: "daily", priority: "0.8", category: "Latest Jobs" },
+    ]).map((entry) => entry.path)).toEqual([
+      "/",
+      "/?category=Latest%20Jobs",
+      "/?category=Results",
+    ]);
+  });
+
   it("keeps every URL and references every bounded shard from the index", () => {
     const entries = [
       { path: "/", changefreq: "hourly", priority: "1.0" },

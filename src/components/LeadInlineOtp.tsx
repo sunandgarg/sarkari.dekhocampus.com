@@ -180,7 +180,7 @@ export function useInlineOtp(phone: string, formKey: string) {
       type="button"
       onClick={() => sendOtp()}
       disabled={sending || !phoneOk || verified || cooldown > 0}
-      className="h-10 shrink-0 whitespace-nowrap rounded-xl bg-primary px-2.5 text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground min-[390px]:px-4"
+      className="h-11 shrink-0 whitespace-nowrap rounded-xl bg-primary px-2.5 text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground min-[390px]:px-4"
     >
       {sending ? (
         <Loader2 className="w-4 h-4 animate-spin" />
@@ -210,7 +210,7 @@ export function useInlineOtp(phone: string, formKey: string) {
           }}
           placeholder={`Enter ${OTP_LENGTH}-digit OTP sent via SMS`}
           inputMode="numeric"
-          className={`h-9 rounded-lg text-sm tracking-widest bg-card ${
+          className={`h-11 rounded-lg text-sm tracking-widest bg-card ${
             missing ? "border-destructive focus-visible:ring-destructive/30" : "border-primary/40 focus-visible:ring-primary/30"
           }`}
         />
@@ -219,7 +219,7 @@ export function useInlineOtp(phone: string, formKey: string) {
           size="sm"
           onClick={verify}
           disabled={sending || code.length !== OTP_LENGTH}
-          className="h-9 shrink-0 whitespace-nowrap rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+          className="h-11 shrink-0 whitespace-nowrap rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
         >
           Verify
         </Button>
@@ -242,7 +242,7 @@ export function useInlineOtp(phone: string, formKey: string) {
               variant="outline"
               onClick={() => sendOtp()}
               disabled={sending}
-              className="h-7 whitespace-nowrap rounded-md border-primary/40 px-2.5 text-[11px] text-primary hover:bg-primary/10"
+              className="h-11 whitespace-nowrap rounded-md border-primary/40 px-2.5 text-[11px] text-primary hover:bg-primary/10"
             >
               Resend SMS
             </Button>

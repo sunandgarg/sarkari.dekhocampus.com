@@ -1,3 +1,15 @@
-/articles/* /news/:splat 301
-/articles /news 301
-/* /index.html 200
+# The Sarkari information architecture uses / as its only archive landing page.
+/articles / 301
+/articles/ / 301
+/articles/:slug/ /news/:slug 301
+/articles/:slug /news/:slug 301
+/news / 301
+/news/ / 301
+/news/:slug/ /news/:slug 301
+/news/tag/:tag/ /news/tag/:tag 301
+
+# Preserve only the supported single-segment public routes. A top-level 404.html
+# handles everything else, so missing JS/CSS under /assets never receives the
+# application shell with a misleading 200 response.
+/news/tag/:tag /index.html 200
+/news/:slug /index.html 200

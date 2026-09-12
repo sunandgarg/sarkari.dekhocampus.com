@@ -24,6 +24,7 @@ import { absoluteCanonical, absoluteSiteUrl, SITE_CONFIG } from "@/lib/constant"
 import { lazyRetry } from "@/lib/lazyRetry";
 import { stripVisibleArticleSources } from "@/lib/articleContentSanitizer";
 import { SARKARI_FAQ_PAGE } from "@/lib/siteScope";
+import { getArticleLoadState } from "@/lib/articleLoadState";
 
 // Heavy below-the-fold components - lazy loaded for faster initial paint
 const DynamicAdBanner = lazyRetry(() => import("@/components/DynamicAdBanner").then(m => ({ default: m.DynamicAdBanner })), "DynamicAdBanner");
@@ -57,7 +58,7 @@ export default function ArticleDetail() {
   const cleanSlug = normalizeSlug(decoded);
   const needsRedirect = !!(rawSlug && cleanSlug && cleanSlug !== rawSlug && cleanSlug !== decoded);
 
-  const { data: dbArticle, isLoading: dbLoading } = useDbArticle(cleanSlug || rawSlug);
+  const { data: dbArticle, isLoading: dbLoading, isError: dbError, refetch: refetchArticle } = useDbArticle(cleanSlug || rawSlug);
   const article = useMemo(() => {
     if (dbArticle) {
       const text = (dbArticle.description || dbArticle.content || "").replace(/<[^>]+>/g, " ");
@@ -86,26 +87,39 @@ export default function ArticleDetail() {
   const [isListening, setIsListening] = useState(false);
   const [saved, setSaved] = useState(false);
   const reduceMotion = useReducedMotion();
+  const seoImage = article?.image && !article.image.includes("placeholder")
+    ? article.image
+    : SITE_CONFIG.ogImagePath;
+  const usesBrandSeoImage = seoImage === SITE_CONFIG.ogImagePath;
+  const articleLoadState = getArticleLoadState(Boolean(article), dbLoading, dbError);
   useSEO({
+    enabled: articleLoadState === "ready" || articleLoadState === "not-found",
     title: article ? article.title : "Article",
     description: article?.excerpt || "Read the latest education and career articles.",
     canonical: article ? `/news/${article.slug}` : undefined,
-    ogImage: article?.image || SITE_CONFIG.ogImagePath,
+    ogImage: seoImage,
+    ogImageAlt: article?.title || "Sarkari DekhoCampus",
     ogType: "article",
-    noIndex: !article && !dbLoading,
+    twitterCard: usesBrandSeoImage ? "summary" : "summary_large_image",
+    noIndex: articleLoadState === "not-found",
     jsonLd: article ? {
       "@context": "https://schema.org",
       "@type": "NewsArticle",
       headline: article.title,
       description: article.excerpt || undefined,
-      image: article.image ? [absoluteCanonical(article.image)] : undefined,
+      image: [absoluteCanonical(seoImage)],
       datePublished: dbArticle?.created_at || undefined,
       dateModified: dbArticle?.updated_at || dbArticle?.created_at || undefined,
       author: { "@type": "Person", name: article.author || "Sarkari DekhoCampus Desk" },
       publisher: {
         "@type": "Organization",
         name: "Sarkari DekhoCampus",
-        logo: { "@type": "ImageObject", url: absoluteSiteUrl(SITE_CONFIG.logoPath) },
+        logo: {
+          "@type": "ImageObject",
+          url: absoluteSiteUrl(SITE_CONFIG.ogImagePath),
+          width: 512,
+          height: 512,
+        },
       },
       mainEntityOfPage: absoluteSiteUrl(`/news/${article.slug}`),
       articleSection: article.category || undefined,
@@ -220,7 +234,7 @@ export default function ArticleDetail() {
   if (needsRedirect) return <Navigate to={`/news/${cleanSlug}`} replace />;
 
   if (!article) {
-    if (dbLoading) {
+    if (articleLoadState === "loading") {
       return (
         <div className="sarkari-site min-h-screen bg-background">
           <SarkariHeader />
@@ -250,13 +264,26 @@ export default function ArticleDetail() {
         </div>
       );
     }
+    if (articleLoadState === "unavailable") {
+      return (
+        <div className="sarkari-site min-h-screen bg-background">
+          <SarkariHeader />
+          <div className="container py-20 text-center" role="alert">
+            <h1 className="mb-2 text-2xl font-bold text-foreground">This update is temporarily unavailable</h1>
+            <p className="mb-6 text-muted-foreground">We could not reach the update service. Please retry in a moment.</p>
+            <Button className="min-h-11 rounded-xl" onClick={() => void refetchArticle()}>Retry</Button>
+          </div>
+          <SarkariFooter />
+        </div>
+      );
+    }
     return (
       <div className="sarkari-site min-h-screen bg-background">
         <SarkariHeader />
         <div className="container py-20 text-center">
           <h1 className="text-2xl font-bold text-foreground mb-2">Article Not Found</h1>
           <p className="text-muted-foreground mb-6">The article you're looking for doesn't exist.</p>
-          <Link to="/news"><Button className="rounded-xl">Browse News</Button></Link>
+          <Link to="/"><Button className="rounded-xl">Browse News</Button></Link>
         </div>
         <SarkariFooter />
       </div>
@@ -333,8 +360,8 @@ export default function ArticleDetail() {
         <div className="container max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex gap-2 overflow-x-auto py-3 scrollbar-hide">
             {NEWS_CATEGORIES.map((c) => (
-              <Link key={c.label} to={c.value ? `/news?category=${encodeURIComponent(c.value)}` : "/news"}
-                className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition ${
+              <Link key={c.label} to={c.value ? `/?category=${encodeURIComponent(c.value)}` : "/"}
+                className={`shrink-0 min-h-11 inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-semibold border transition ${
                   (article?.category || "").toLowerCase().includes(c.value.toLowerCase()) && c.value
                     ? "bg-primary text-primary-foreground border-primary"
                     : "bg-background text-muted-foreground border-border hover:border-primary/40 hover:text-primary"
@@ -466,7 +493,7 @@ export default function ArticleDetail() {
               <SheetTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1.5 bg-card/95 backdrop-blur-md border border-border shadow-lg rounded-full px-3 h-8 text-[11px] font-bold text-foreground hover:border-primary/40 active:scale-95 transition"
+                  className="inline-flex items-center gap-1.5 bg-card/95 backdrop-blur-md border border-border shadow-lg rounded-full px-3 h-11 text-[11px] font-bold text-foreground hover:border-primary/40 active:scale-95 transition"
                   aria-label="Open table of contents"
                 >
                   <List className="w-3.5 h-3.5 text-primary" />
@@ -480,13 +507,13 @@ export default function ArticleDetail() {
                 <ul className="mt-4 space-y-3 pb-6">
                   {toc.map((h, idx) => (
                     <li key={h.id} className="flex items-start gap-3">
-                      <span className="text-[11px] mt-1 font-bold text-muted-foreground/60 tabular-nums w-5 shrink-0">
+                      <span className="text-[11px] mt-1 font-bold text-muted-foreground tabular-nums w-5 shrink-0">
                         {String(idx + 1).padStart(2, "0")}
                       </span>
                       <button
                         type="button"
                         onClick={() => { setTocSheetOpen(false); setTimeout(() => jumpTo(h.id), 100); }}
-                        className="text-left text-[14px] font-semibold text-foreground/90 hover:text-primary flex-1"
+                        className="min-h-11 text-left text-[14px] font-semibold text-foreground/90 hover:text-primary flex-1"
                       >
                         {h.text}
                       </button>
@@ -501,7 +528,7 @@ export default function ArticleDetail() {
             <button
               type="button"
               onClick={handleSave}
-              className={`inline-flex items-center gap-1.5 px-3.5 h-9 rounded-full text-[12px] font-bold transition active:scale-95 ${saved ? "bg-primary text-primary-foreground" : "bg-foreground text-background"}`}
+              className={`inline-flex items-center gap-1.5 px-3.5 h-11 rounded-full text-[12px] font-bold transition active:scale-95 ${saved ? "bg-primary text-primary-foreground" : "bg-foreground text-background"}`}
             >
               <Bookmark className={`w-3.5 h-3.5 ${saved ? "fill-current" : ""}`} />
               {saved ? "Saved" : "Save"}
@@ -509,7 +536,7 @@ export default function ArticleDetail() {
             <div className="w-px h-5 bg-border" />
             <Popover>
               <PopoverTrigger asChild>
-                <button type="button" className="w-9 h-9 flex items-center justify-center rounded-full text-foreground/70 hover:text-primary transition" aria-label="Share">
+                <button type="button" className="w-11 h-11 flex items-center justify-center rounded-full text-foreground/70 hover:text-primary transition" aria-label="Share">
                   <Share2 className="w-4 h-4" />
                 </button>
               </PopoverTrigger>
@@ -536,13 +563,13 @@ export default function ArticleDetail() {
                   </ShareBtn>
                 </div>
                 {typeof navigator !== "undefined" && (navigator as any).share && (
-                  <button onClick={handleShare} className="mt-3 w-full text-[12px] font-semibold text-primary hover:underline">
+                  <button onClick={handleShare} className="mt-3 min-h-11 w-full text-[12px] font-semibold text-primary hover:underline">
                     More options…
                   </button>
                 )}
               </PopoverContent>
             </Popover>
-            <button type="button" onClick={copyLink} className="w-9 h-9 flex items-center justify-center rounded-full text-foreground/70 hover:text-primary transition" aria-label="Copy link">
+            <button type="button" onClick={copyLink} className="w-11 h-11 flex items-center justify-center rounded-full text-foreground/70 hover:text-primary transition" aria-label="Copy link">
               <Link2 className="w-4 h-4" />
             </button>
           </div>
@@ -564,7 +591,7 @@ function ShareBtn({ label, color, onClick, children }: { label: string; color: s
     <button
       type="button"
       onClick={onClick}
-      className="flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl bg-muted/50 hover:bg-muted active:scale-95 transition"
+      className="min-h-11 flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl bg-muted/50 hover:bg-muted active:scale-95 transition"
     >
       <span className="w-9 h-9 rounded-full flex items-center justify-center text-white shrink-0" style={{ backgroundColor: color }}>
         {children}
@@ -587,7 +614,7 @@ function ArticleTagCloud({ tags }: { tags: string[] }) {
       </div>
       <div className="flex flex-wrap gap-1.5">
         {visible.map((tag) => (
-          <Link key={tag} to={`/news/tag/${encodeURIComponent(tag)}`}>
+          <Link key={tag} className="min-h-11 inline-flex items-center" to={`/news/tag/${encodeURIComponent(tag)}`}>
             <Badge variant="outline" className="text-[11px] font-medium px-2 py-0.5 rounded-full hover:bg-primary hover:text-primary-foreground hover:border-primary transition">
               <Tag className="w-2.5 h-2.5 mr-1 opacity-60" />{tag}
             </Badge>
@@ -596,7 +623,7 @@ function ArticleTagCloud({ tags }: { tags: string[] }) {
         {hidden > 0 && !expanded && (
           <button
             onClick={() => setExpanded(true)}
-            className="text-[11px] font-semibold text-primary px-2 py-0.5 rounded-full border border-primary/30 bg-primary/5 hover:bg-primary/10 transition"
+            className="min-h-11 text-[11px] font-semibold text-primary px-2 py-0.5 rounded-full border border-primary/30 bg-primary/5 hover:bg-primary/10 transition"
           >
             +{hidden} more
           </button>
@@ -604,7 +631,7 @@ function ArticleTagCloud({ tags }: { tags: string[] }) {
         {expanded && tags.length > LIMIT && (
           <button
             onClick={() => setExpanded(false)}
-            className="text-[11px] font-semibold text-muted-foreground px-2 py-0.5 rounded-full border border-border hover:bg-muted transition"
+            className="min-h-11 text-[11px] font-semibold text-muted-foreground px-2 py-0.5 rounded-full border border-border hover:bg-muted transition"
           >
             Show less
           </button>

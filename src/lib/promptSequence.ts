@@ -1,5 +1,6 @@
 export const COOKIE_CONSENT_KEY = "dc_cookie_consent_v1";
 export const COOKIE_RESOLVED_EVENT = "dc:cookie-consent-resolved";
+export const COOKIE_SETTINGS_OPEN_EVENT = "dc:cookie-settings-open";
 export const LOCK_PROMO_RESOLVED_KEY = "dc:lock-target-promo:resolved";
 export const LOCK_PROMO_RESOLVED_EVENT = "dc:lock-target-promo-resolved";
 export const GOOGLE_PROMO_RESOLVED_KEY = "dc:google-source-promo:resolved";
@@ -20,6 +21,10 @@ export function hasGooglePromoResolved() {
 
 export function signalCookieResolved() {
   window.dispatchEvent(new Event(COOKIE_RESOLVED_EVENT));
+}
+
+export function openCookieSettings() {
+  window.dispatchEvent(new Event(COOKIE_SETTINGS_OPEN_EVENT));
 }
 
 export function signalLockPromoResolved() {

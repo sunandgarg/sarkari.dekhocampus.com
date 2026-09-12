@@ -3,40 +3,21 @@ import { backendClient } from "@/integrations/backend/client";
 import { toast } from "sonner";
 import { SARKARI_SITE_SCOPE } from "@/lib/siteScope";
 import { runWithConcurrency } from "@/lib/runWithConcurrency";
+import {
+  PUBLIC_ARTICLE_DETAIL_FIELDS,
+  PUBLIC_ARTICLE_LIST_FIELDS,
+  type PublicSarkariArticle,
+  validatePublicSarkariArticle,
+} from "@/lib/sarkariArticleBootstrap";
+import { readSarkariArticleBootstrap } from "@/lib/readSarkariArticleBootstrap";
+
+export { PUBLIC_ARTICLE_DETAIL_FIELDS, PUBLIC_ARTICLE_LIST_FIELDS } from "@/lib/sarkariArticleBootstrap";
 
 function isPendingReview(response: { status?: number | null }) {
   return response.status === 202;
 }
 
-export type DbArticle = {
-  id: string;
-  site_scope: typeof SARKARI_SITE_SCOPE;
-  status: string;
-  title: string;
-  slug: string;
-  description: string;
-  content?: string;
-  vertical: string;
-  category: string;
-  author: string;
-  featured_image: string;
-  views: number;
-  tags: string[];
-  meta_title?: string;
-  meta_description?: string;
-  meta_keywords?: string;
-  author_id?: string | null;
-  is_active: boolean;
-  featured_rank?: number | null;
-  created_at: string;
-  updated_at: string;
-};
-
-export const PUBLIC_ARTICLE_LIST_FIELDS =
-  "id,site_scope,status,title,slug,description,vertical,category,author,featured_image,views,tags,is_active,featured_rank,created_at,updated_at";
-
-export const PUBLIC_ARTICLE_DETAIL_FIELDS =
-  `${PUBLIC_ARTICLE_LIST_FIELDS},content,meta_title,meta_description,meta_keywords`;
+export type DbArticle = PublicSarkariArticle;
 
 export const SARKARI_ARCHIVE_PAGE_SIZE = 9;
 export const SARKARI_HOME_READ_CONCURRENCY = 2;
@@ -251,6 +232,7 @@ export function useAdminArticles(search: string | undefined, page: number, pageS
 }
 
 export function useDbArticle(slug: string | undefined) {
+  const bootstrapArticle = slug ? readSarkariArticleBootstrap(slug) : undefined;
   return useQuery({
     queryKey: ["db-article", SARKARI_SITE_SCOPE, slug],
     queryFn: async () => {
@@ -263,11 +245,14 @@ export function useDbArticle(slug: string | undefined) {
         .eq("is_active", true)
         .maybeSingle();
       if (error) throw error;
-      return data && typeof data === "object" && typeof (data as any).slug === "string" && typeof (data as any).title === "string"
-        ? data as DbArticle
-        : null;
+      if (data === null || data === undefined) return null;
+      const article = validatePublicSarkariArticle(data, slug!);
+      if (!article) throw new Error("Invalid public article response");
+      return article;
     },
     enabled: !!slug,
+    initialData: bootstrapArticle,
+    initialDataUpdatedAt: bootstrapArticle ? Date.now() : undefined,
     staleTime: 5 * 60 * 1000,
   });
 }

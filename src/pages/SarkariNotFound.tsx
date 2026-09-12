@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { SEO } from "@/components/SEO";
 import { SarkariFooter } from "@/components/sarkari/SarkariFooter";
 import { SarkariHeader } from "@/components/sarkari/SarkariHeader";
+import { SITE_CONFIG } from "@/lib/constant";
 
 export default function SarkariNotFound() {
   const { pathname } = useLocation();
@@ -13,6 +14,9 @@ export default function SarkariNotFound() {
         title="Page not found | Sarkari DekhoCampus"
         description="This Sarkari DekhoCampus page could not be found. Search the latest government jobs, results and admit cards."
         canonical={pathname}
+        ogImage={SITE_CONFIG.ogImagePath}
+        ogImageAlt="Sarkari DekhoCampus"
+        twitterCard="summary"
         noIndex
       />
       <a className="sarkari-skip-link" href="#content">Skip to main content</a>

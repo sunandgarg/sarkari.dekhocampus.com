@@ -1,3 +1,5 @@
+import { normalizeSarkariCategory, SARKARI_CATEGORIES, type SarkariCategory } from "./sarkariCategories";
+
 export const ARTICLE_SITEMAP_PAGE_SIZE = 1_000;
 export const SITEMAP_MAX_URLS_PER_SHARD = 50_000;
 
@@ -13,6 +15,7 @@ export type ArticleSitemapEntry = {
   lastmod?: string;
   changefreq: "daily";
   priority: "0.8";
+  category: SarkariCategory;
 };
 
 export type SitemapShard = {
@@ -29,6 +32,8 @@ export type SitemapDocuments = {
 type ArticleRow = {
   slug?: unknown;
   updated_at?: unknown;
+  category?: unknown;
+  vertical?: unknown;
 };
 
 type FetchResponse = {
@@ -90,6 +95,21 @@ function escapeXml(value: string) {
 function renderUrlSet(baseUrl: string, entries: SitemapEntry[]) {
   const urls = entries.map((entry) => `  <url>\n    <loc>${escapeXml(`${baseUrl}${entry.path}`)}</loc>${entry.lastmod ? `\n    <lastmod>${entry.lastmod}</lastmod>` : ""}${entry.changefreq ? `\n    <changefreq>${entry.changefreq}</changefreq>` : ""}${entry.priority ? `\n    <priority>${entry.priority}</priority>` : ""}\n  </url>`).join("\n");
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
+}
+
+/** Includes only category archives that have at least one published article. */
+export function buildSarkariFixedSitemapEntries(articleEntries: ArticleSitemapEntry[]): SitemapEntry[] {
+  const activeCategories = new Set(articleEntries.map((entry) => entry.category));
+  return [
+    { path: "/", changefreq: "hourly", priority: "1.0" },
+    ...SARKARI_CATEGORIES
+      .filter((category) => activeCategories.has(category))
+      .map((category) => ({
+        path: `/?category=${encodeURIComponent(category)}`,
+        changefreq: "daily",
+        priority: "0.8",
+      })),
+  ];
 }
 
 /** Creates protocol-compliant URL-set shards plus the index that references them. */
@@ -156,7 +176,7 @@ export async function fetchPublishedArticleEntries({
 
   for (;;) {
     const url = new URL("/v1/rest/articles", apiUrl);
-    url.searchParams.set("select", "slug,updated_at");
+    url.searchParams.set("select", "slug,updated_at,category,vertical");
     url.searchParams.set("site_scope", `eq.${siteScope}`);
     url.searchParams.set("is_active", "eq.true");
     url.searchParams.set("status", "eq.Published");
@@ -205,6 +225,13 @@ export async function fetchPublishedArticleEntries({
         lastmod: lastModifiedDate(row.updated_at),
         changefreq: "daily",
         priority: "0.8",
+        category: normalizeSarkariCategory(
+          typeof row.category === "string" && row.category.trim()
+            ? row.category.trim()
+            : typeof row.vertical === "string" && row.vertical.trim()
+              ? row.vertical.trim()
+              : "",
+        ),
       });
     }
 

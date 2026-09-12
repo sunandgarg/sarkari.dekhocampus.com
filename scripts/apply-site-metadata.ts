@@ -50,13 +50,6 @@ Disallow: /dashboard
 Disallow: /auth
 Disallow: /onboarding
 
-User-agent: GPTBot
-Allow: /
-Disallow: /admin
-Disallow: /dashboard
-Disallow: /auth
-Disallow: /onboarding
-
 User-agent: ChatGPT-User
 Allow: /
 
@@ -67,9 +60,6 @@ User-agent: OAI-AdsBot
 Allow: /
 
 User-agent: PerplexityBot
-Allow: /
-
-User-agent: ClaudeBot
 Allow: /
 
 User-agent: Claude-User
