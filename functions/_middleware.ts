@@ -57,7 +57,14 @@ export async function onRequest(context: PagesMiddlewareContext) {
   }
   const response = await context.next(downstreamRequest);
   const contentType = response.headers.get("Content-Type") || "";
-  if (!contentType.toLowerCase().includes("text/html")) return response;
+  if (!contentType.toLowerCase().includes("text/html")) {
+    if (incomingMethod !== "HEAD") return response;
+    return new Response(null, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    });
+  }
 
   if (response.status === 304) {
     return new Response(null, {

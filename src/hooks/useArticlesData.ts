@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { backendClient } from "@/integrations/backend/client";
+import { functionUrl } from "@/lib/backendMode";
 import { SARKARI_SITE_SCOPE } from "@/lib/siteScope";
-import { runWithConcurrency } from "@/lib/runWithConcurrency";
 import {
   PUBLIC_ARTICLE_DETAIL_FIELDS,
   PUBLIC_ARTICLE_LIST_FIELDS,
@@ -9,6 +9,11 @@ import {
   validatePublicSarkariArticle,
 } from "@/lib/sarkariArticleBootstrap";
 import { readSarkariArticleBootstrap } from "@/lib/readSarkariArticleBootstrap";
+import {
+  readBoundedSarkariHomeFeed,
+  type SarkariHomeFeed,
+  type SarkariHomeFeedCard,
+} from "@/lib/sarkariHomeFeed";
 
 export { PUBLIC_ARTICLE_DETAIL_FIELDS, PUBLIC_ARTICLE_LIST_FIELDS } from "@/lib/sarkariArticleBootstrap";
 
@@ -27,8 +32,9 @@ function notifyArticleMutation(kind: "success" | "error", message: string) {
 export type DbArticle = PublicSarkariArticle;
 
 export const SARKARI_ARCHIVE_PAGE_SIZE = 9;
-export const SARKARI_HOME_READ_CONCURRENCY = 2;
 const LEGACY_PUBLIC_LIST_LIMIT = 60;
+const SARKARI_HOME_EDGE_URL = "/api/home-feed";
+const SARKARI_HOME_REQUEST_TIMEOUT_MS = 4_000;
 
 const publicArticlesQuery = (fields = PUBLIC_ARTICLE_LIST_FIELDS) =>
   backendClient
@@ -65,42 +71,73 @@ export type SarkariHomepageArticles = {
   byCategory: Record<string, DbArticle[]>;
 };
 
-/** Fetches at most nine cards per homepage rail, regardless of table size. */
+function homeFeedCardToArticle(card: SarkariHomeFeedCard): DbArticle {
+  return {
+    id: card.id,
+    site_scope: SARKARI_SITE_SCOPE,
+    status: "Published",
+    title: card.title,
+    slug: card.slug,
+    description: card.description,
+    vertical: card.category,
+    category: card.category,
+    author: "",
+    featured_image: "",
+    views: 0,
+    tags: [],
+    is_active: true,
+    featured_rank: null,
+    created_at: card.createdAt,
+    updated_at: card.createdAt,
+  };
+}
+
+async function fetchHomeFeed(url: string, signal?: AbortSignal) {
+  const controller = new AbortController();
+  const abortFromQuery = () => controller.abort(signal?.reason);
+  if (signal?.aborted) abortFromQuery();
+  else signal?.addEventListener("abort", abortFromQuery, { once: true });
+  const timeout = setTimeout(() => controller.abort("SARKARI_HOME_FEED_TIMEOUT"), SARKARI_HOME_REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: { accept: "application/json" },
+      credentials: "omit",
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error("SARKARI_HOME_FEED_REQUEST_FAILED");
+    return await readBoundedSarkariHomeFeed(response);
+  } finally {
+    clearTimeout(timeout);
+    signal?.removeEventListener("abort", abortFromQuery);
+  }
+}
+
+function homeFeedToArticles(feed: SarkariHomeFeed, categories: readonly string[]): SarkariHomepageArticles {
+  return {
+    latest: feed.latest.map(homeFeedCardToArticle),
+    byCategory: Object.fromEntries(categories.map((category) => [
+      category,
+      (feed.byCategory[category as keyof typeof feed.byCategory] || []).map(homeFeedCardToArticle),
+    ])),
+  };
+}
+
+/** Fetches one bounded aggregate; an edge failure falls back to one AWS aggregate request. */
 export function useSarkariHomepageArticles(categories: readonly string[], enabled = true) {
   const categoryKey = categories.join("|");
   return useQuery({
     queryKey: ["sarkari-home-articles", SARKARI_SITE_SCOPE, categoryKey],
     enabled,
-    queryFn: async (): Promise<SarkariHomepageArticles> => {
-      const readTasks = [
-        () => publicArticlesQuery()
-          .not("featured_rank", "is", null)
-          .order("featured_rank", { ascending: true })
-          .limit(SARKARI_ARCHIVE_PAGE_SIZE),
-        () => publicArticlesQuery()
-          .order("created_at", { ascending: false })
-          .limit(SARKARI_ARCHIVE_PAGE_SIZE),
-        ...categories.map((category) => () => publicArticlesQuery()
-          .eq("category", category)
-          .order("created_at", { ascending: false })
-          .limit(SARKARI_ARCHIVE_PAGE_SIZE)),
-      ];
-      const [pinnedResponse, latestResponse, ...categoryResponses] =
-        await runWithConcurrency(readTasks, SARKARI_HOME_READ_CONCURRENCY);
-
-      const responses = [pinnedResponse, latestResponse, ...categoryResponses];
-      const failed = responses.find((response) => response.error);
-      if (failed?.error) throw failed.error;
-
-      const seenLatest = new Set<string>();
-      const latest = [...rowsFrom(pinnedResponse.data), ...rowsFrom(latestResponse.data)]
-        .filter((article) => !seenLatest.has(article.id) && seenLatest.add(article.id))
-        .slice(0, SARKARI_ARCHIVE_PAGE_SIZE);
-
-      const byCategory = Object.fromEntries(
-        categories.map((category, index) => [category, rowsFrom(categoryResponses[index]?.data)])
-      );
-      return { latest, byCategory };
+    retry: false,
+    queryFn: async ({ signal }): Promise<SarkariHomepageArticles> => {
+      try {
+        return homeFeedToArticles(await fetchHomeFeed(SARKARI_HOME_EDGE_URL, signal), categories);
+      } catch (edgeError) {
+        if (signal.aborted) throw edgeError;
+        console.warn(JSON.stringify({ event: "sarkari_home_feed_edge_fallback" }));
+        return homeFeedToArticles(await fetchHomeFeed(functionUrl("sarkari-home-feed"), signal), categories);
+      }
     },
     staleTime: 5 * 60 * 1000,
   });

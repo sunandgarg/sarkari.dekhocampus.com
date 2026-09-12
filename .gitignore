@@ -33,6 +33,9 @@ work/
 /docs/
 /functions/*
 !/functions/_middleware.ts
+!/functions/api/
+/functions/api/*
+!/functions/api/home-feed.ts
 !/functions/news/
 /functions/news/*
 !/functions/news/\[slug\].ts

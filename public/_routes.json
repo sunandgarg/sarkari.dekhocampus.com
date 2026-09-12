@@ -1,5 +1,5 @@
 {
   "version": 1,
-  "include": ["/news/*"],
+  "include": ["/news/*", "/api/home-feed"],
   "exclude": ["/news/tag/*"]
 }

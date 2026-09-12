@@ -51,6 +51,24 @@ describe("Sarkari Pages CSP middleware", () => {
     expect(response.headers.get("etag")).toBe('"asset"');
   });
 
+  it("keeps non-HTML HEAD responses bodyless after the internal GET", async () => {
+    let forwarded: Request | undefined;
+    const response = await onRequest({
+      request: new Request("https://sarkari.dekhocampus.com/api/home-feed", { method: "HEAD" }),
+      next: async (request) => {
+        forwarded = request;
+        return new Response('{"version":1}', {
+          status: 200,
+          headers: { "Content-Type": "application/json", "X-Feed-Test": "preserved" },
+        });
+      },
+    });
+    expect(forwarded?.method).toBe("GET");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-feed-test")).toBe("preserved");
+    expect(await response.text()).toBe("");
+  });
+
   it("replaces a prior nonce rather than accumulating stale authorization", () => {
     expect(applyScriptNonce('<script nonce="old">1</script>', "new")).toContain('<script nonce="new">');
   });

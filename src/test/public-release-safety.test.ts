@@ -7,6 +7,7 @@ describe("public Sarkari release boundaries", () => {
   const indexSource = readFileSync(resolve(process.cwd(), "src/pages/Index.tsx"), "utf8");
   const articleSource = readFileSync(resolve(process.cwd(), "src/pages/ArticleDetail.tsx"), "utf8");
   const hookSource = readFileSync(resolve(process.cwd(), "src/hooks/useArticlesData.ts"), "utf8");
+  const homeFeedSource = readFileSync(resolve(process.cwd(), "src/lib/sarkariHomeFeed.ts"), "utf8");
 
   it("does not expose a duplicate authentication or admin application", () => {
     expect(appSource).not.toMatch(/path="\/auth"|path="\/admin/);
@@ -23,7 +24,11 @@ describe("public Sarkari release boundaries", () => {
     expect(hookSource).toMatch(/\.eq\("site_scope", SARKARI_SITE_SCOPE\)/);
     expect(hookSource).toMatch(/\.eq\("status", "Published"\)/);
     expect(hookSource).toMatch(/\.eq\("is_active", true\)/);
-    expect(hookSource).toMatch(/\.limit\(SARKARI_ARCHIVE_PAGE_SIZE\)/);
+    expect(hookSource).toContain('const SARKARI_HOME_EDGE_URL = "/api/home-feed"');
+    expect(hookSource).toContain('functionUrl("sarkari-home-feed")');
+    expect(hookSource).not.toContain("SARKARI_HOME_READ_CONCURRENCY");
+    expect(homeFeedSource).toContain("SARKARI_HOME_FEED_MAX_ITEMS = 9");
+    expect(homeFeedSource).toContain("SARKARI_HOME_FEED_MAX_BYTES = 256 * 1024");
   });
 
   it("keeps notification and tooltip libraries out of the homepage entry path", () => {

@@ -37,7 +37,7 @@ describe("Sarkari Pages edge contract", () => {
     expect(notFound).toContain('name="robots" content="noindex, nofollow, noarchive"');
 
     const routes = JSON.parse(read("public/_routes.json"));
-    expect(routes.include).toEqual(["/news/*"]);
+    expect(routes.include).toEqual(["/news/*", "/api/home-feed"]);
     expect(routes.exclude).toEqual(["/news/tag/*"]);
     const articleFunction = read("functions/news/[slug].ts");
     expect(articleFunction).toContain('site_scope: "eq.sarkari"');
@@ -46,6 +46,13 @@ describe("Sarkari Pages edge contract", () => {
     const middleware = read("functions/_middleware.ts");
     expect(middleware).toContain("'strict-dynamic'");
     expect(middleware).toContain("applyScriptNonce");
+    const ignore = read(".gitignore");
+    expect(ignore).toContain("!/functions/api/home-feed.ts");
+    expect(ignore).toContain("/functions/api/*");
+    expect(ignore).not.toContain("!/functions/api/blog-agent-cron.ts");
+    const homeFeedFunction = read("functions/api/home-feed.ts");
+    expect(homeFeedFunction).toContain('const ORIGIN_PATH = "/v1/functions/sarkari-home-feed"');
+    expect(homeFeedFunction).toContain('const CACHE_KEY = "https://sarkari-internal.invalid/home-feed?schema=1"');
   });
 
   it("ships security headers without blocking configured analytics origins", () => {
