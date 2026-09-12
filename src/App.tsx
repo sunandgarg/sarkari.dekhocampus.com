@@ -16,11 +16,15 @@ const SiteIntegrations = lazyRetry(() => import("@/components/SiteIntegrations")
 const AdsenseLoader = lazyRetry(() => import("@/components/ads/AdsenseLoader").then((module) => ({ default: module.AdsenseLoader })), "AdsenseLoader");
 const CookieConsent = lazyRetry(() => import("@/components/CookieConsent").then((module) => ({ default: module.CookieConsent })), "CookieConsent");
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { staleTime: 10 * 60 * 1000, gcTime: 30 * 60 * 1000, retry: 1, refetchOnWindowFocus: false },
-  },
-});
+export function createAppQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: { staleTime: 10 * 60 * 1000, gcTime: 30 * 60 * 1000, retry: 1, refetchOnWindowFocus: false },
+    },
+  });
+}
+
+const browserQueryClient = createAppQueryClient();
 
 function LegacyArticleRoute() {
   const { slug } = useParams<{ slug?: string }>();
@@ -59,43 +63,51 @@ function PageLoader() {
   return <div className="min-h-screen bg-background flex items-center justify-center"><div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 }
 
-export default function App() {
+export function AppRuntime() {
   const { showCookieConsent, openCookieSettingsOnMount, showConsentedServices } = useDeferredOptionalRuntime();
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        {showCookieConsent && (
-          <OptionalIntegrationBoundary name="cookie-consent">
-            <Suspense fallback={null}><CookieConsent initiallyOpen={openCookieSettingsOnMount} /></Suspense>
+    <>
+      {showCookieConsent && (
+        <OptionalIntegrationBoundary name="cookie-consent">
+          <Suspense fallback={null}><CookieConsent initiallyOpen={openCookieSettingsOnMount} /></Suspense>
+        </OptionalIntegrationBoundary>
+      )}
+      {showConsentedServices && (
+        <>
+          <OptionalIntegrationBoundary name="site-integrations">
+            <Suspense fallback={null}><SiteIntegrations /></Suspense>
           </OptionalIntegrationBoundary>
-        )}
-        {showConsentedServices && (
-          <>
-            <OptionalIntegrationBoundary name="site-integrations">
-              <Suspense fallback={null}><SiteIntegrations /></Suspense>
-            </OptionalIntegrationBoundary>
-            <OptionalIntegrationBoundary name="adsense">
-              <Suspense fallback={null}><AdsenseLoader /></Suspense>
-            </OptionalIntegrationBoundary>
-          </>
-        )}
-        <ScrollToTop />
-        <ScrollLockGuard />
-        <RouteSeoPolicy />
-        <ChunkErrorBoundary>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/news" element={<NewsArchiveRedirect />} />
-              <Route path="/news/tag/:tag" element={<Index />} />
-              <Route path="/news/:slug" element={<ArticleDetail />} />
-              <Route path="/articles" element={<LegacyArticleRoute />} />
-              <Route path="/articles/:slug" element={<LegacyArticleRoute />} />
-              <Route path="*" element={<SarkariNotFound />} />
-            </Routes>
-          </Suspense>
-        </ChunkErrorBoundary>
+          <OptionalIntegrationBoundary name="adsense">
+            <Suspense fallback={null}><AdsenseLoader /></Suspense>
+          </OptionalIntegrationBoundary>
+        </>
+      )}
+      <ScrollToTop />
+      <ScrollLockGuard />
+      <RouteSeoPolicy />
+      <ChunkErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/news" element={<NewsArchiveRedirect />} />
+            <Route path="/news/tag/:tag" element={<Index />} />
+            <Route path="/news/:slug" element={<ArticleDetail />} />
+            <Route path="/articles" element={<LegacyArticleRoute />} />
+            <Route path="/articles/:slug" element={<LegacyArticleRoute />} />
+            <Route path="*" element={<SarkariNotFound />} />
+          </Routes>
+        </Suspense>
+      </ChunkErrorBoundary>
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <QueryClientProvider client={browserQueryClient}>
+      <BrowserRouter>
+        <AppRuntime />
       </BrowserRouter>
     </QueryClientProvider>
   );

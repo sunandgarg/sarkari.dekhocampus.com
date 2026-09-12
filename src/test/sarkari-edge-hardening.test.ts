@@ -24,10 +24,12 @@ describe("Sarkari Pages edge contract", () => {
   it("keeps only real SPA routes on the HTML fallback", () => {
     const redirects = read("public/_redirects");
     expect(redirects).toContain("/news / 301");
-    expect(redirects).toContain("/news/:slug /index.html 200");
-    expect(redirects).toContain("/news/tag/:tag / 200");
-    expect(redirects).not.toContain("/news/tag/:tag /index.html 200");
-    expect(redirects.match(/^\/news\/tag\/:tag \/ 200$/gm)).toHaveLength(1);
+    expect(redirects).toContain("/news/:slug /__sarkari_article_shell.asset 200");
+    expect(redirects).toContain("/news/tag/:tag /__sarkari_article_shell.asset 200");
+    expect(redirects).not.toContain("/news/:slug /index.html 200");
+    expect(redirects).not.toMatch(/^\/news\/(?:tag\/:tag|:slug) \/[^\s]*\.html 200$/m);
+    expect(redirects).not.toMatch(/^\/news\/tag\/:tag \/ 200$/m);
+    expect(redirects.match(/^\/news\/tag\/:tag \/__sarkari_article_shell\.asset 200$/gm)).toHaveLength(1);
     expect(redirects).not.toContain("/news/* /index.html 200");
     expect(redirects).not.toMatch(/^\/\* \/index\.html 200$/m);
 
@@ -87,8 +89,31 @@ describe("Sarkari Pages edge contract", () => {
     expect(index).toContain('sizes="180x180" href="/apple-touch-icon.png"');
     expect(index).toContain('name="twitter:card" content="summary"');
     expect(index).toContain('content="https://sarkari.dekhocampus.com/icon-512.png"');
-    expect(index).toContain('<h1 class="dc-shell-title">Your shortcut to <strong>government opportunities</strong></h1>');
-    expect(index).toContain('id="dc-first-paint-shell" hidden aria-hidden="true"');
+    expect(index).toContain("<!-- SARKARI_HOME_PRERENDER_START -->");
+    expect(index).toContain('id="root" data-sarkari-prerender="home"');
+    expect(index).toContain('id="sarkari-home-prerender-placeholder"');
+    expect(index).toContain('window.location.pathname === "/" && window.location.search === ""');
+    expect(index).not.toContain("dc-first-paint-shell");
+
+    const main = read("src/main.tsx");
+    expect(main).toContain("hasHydratableHomePrerender");
+    expect(main).toContain("hydrateRoot(root, <App />");
+    expect(main).toContain("identifierPrefix: HOME_PRERENDER_IDENTIFIER_PREFIX");
+    expect(main).toContain("root.replaceChildren()");
+
+    const sourceHeaders = read("public/_headers");
+    expect(sourceHeaders).toContain("/__sarkari_article_shell.asset");
+    expect(sourceHeaders).toContain("Content-Type: text/html; charset=utf-8");
+    expect(sourceHeaders).toContain("X-Robots-Tag: noindex, nofollow, noarchive");
+
+    const footer = read("src/components/sarkari/SarkariFooter.tsx");
+    expect(footer).toContain("Copyright © {__APP_BUILD_YEAR__}");
+    expect(footer).not.toContain("new Date()");
+
+    const prerenderScript = read("scripts/prerender-home.ts");
+    expect(prerenderScript).toContain('process.env.NODE_ENV = "development"');
+    expect(prerenderScript).toContain("if (originalNodeEnv === undefined) delete process.env.NODE_ENV");
+    expect(prerenderScript.indexOf("vite = await createServer")).toBeGreaterThan(prerenderScript.indexOf("try {"));
 
     const app = read("src/App.tsx");
     expect(app).toContain('<OptionalIntegrationBoundary name="site-integrations">');

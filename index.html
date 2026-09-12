@@ -45,30 +45,6 @@
     <meta name="theme-color" content="#3257d2" />
     <meta name="msapplication-TileColor" content="#3257d2" />
 
-    <style>
-      #dc-first-paint-shell { min-height: 100vh; background: #fcfcfd; color: #131720; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-      #dc-first-paint-shell[hidden] { display: none; }
-      .dc-shell-nav { height: 64px; display: flex; align-items: center; padding: 0 12px; border-bottom: 1px solid #e2e4e9; background: #fff; }
-      .dc-shell-logo { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 900; color: #131720; }
-      .dc-shell-mark { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 8px; background: #3257d2; color: #fff; font-size: 12px; font-style: normal; }
-      .dc-shell-logo span { color: #3257d2; }
-      .dc-shell-hero { box-sizing: border-box; min-height: 580px; padding: 46px 12px 52px; border-bottom: 1px solid #e2e4e9; background: #fff; text-align: center; }
-      .dc-shell-copy { max-width: 850px; margin: 0 auto; }
-      .dc-shell-badge { display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px; border: 1px solid rgba(50,93,210,.22); border-radius: 6px; background: rgba(50,93,210,.07); color: #3257d2; font-size: 9px; font-weight: 800; text-transform: uppercase; }
-      .dc-shell-title { max-width: 760px; margin: 19px auto 0; font-size: 38px; line-height: 1.02; letter-spacing: -.045em; font-weight: 900; }
-      .dc-shell-title strong { display: block; color: #3257d2; }
-      .dc-shell-description { max-width: 650px; margin: 16px auto 0; color: #666d7a; font-size: 13px; line-height: 1.72; font-weight: 500; }
-      .dc-shell-hero-search { max-width: 720px; height: 58px; margin: 28px auto 0; border: 1px solid #e2e4e9; border-radius: 10px; background: #fff; box-shadow: 0 8px 24px rgba(19,23,32,.08); }
-      @media (min-width: 768px) {
-        .dc-shell-nav { height: 72px; padding: 0 max(24px, calc((100vw - 1280px) / 2)); }
-        .dc-shell-logo { font-size: 17px; }
-        .dc-shell-mark { width: 43px; height: 43px; font-size: 14px; }
-        .dc-shell-hero { min-height: 640px; padding: 78px max(24px, calc((100vw - 1280px) / 2)) 68px; }
-        .dc-shell-title { font-size: 68px; }
-        .dc-shell-description { font-size: 18px; }
-      }
-    </style>
-
     <!-- Google AdSense (deferred to idle to avoid blocking LCP; loaded via AdsenseLoader) -->
     <meta name="google-adsense-account" content="ca-pub-4858806955717066" />
 
@@ -120,27 +96,19 @@
 </head>
 
   <body>
-    <div id="root">
-      <div id="dc-first-paint-shell" hidden aria-hidden="true">
-        <header class="dc-shell-nav">
-          <div class="dc-shell-logo"><i class="dc-shell-mark">SD</i><b>Sarkari<span>DekhoCampus</span></b></div>
-        </header>
-        <main class="dc-shell-hero">
-          <div class="dc-shell-copy">
-            <span class="dc-shell-badge">AI-assisted discovery, written for people</span>
-            <h1 class="dc-shell-title">Your shortcut to <strong>government opportunities</strong></h1>
-            <p class="dc-shell-description">Find jobs, results, admit cards and answer keys in a clear format, with important dates and official next steps up front.</p>
-            <div class="dc-shell-hero-search"></div>
-          </div>
-        </main>
-      </div>
-    </div>
+    <!-- SARKARI_HOME_PRERENDER_START -->
+    <div id="root" data-sarkari-prerender="home"><div id="sarkari-home-prerender-placeholder"></div></div>
+    <!-- SARKARI_HOME_PRERENDER_END -->
     <script>
       (() => {
-        const shell = document.getElementById("dc-first-paint-shell");
-        if (!shell) return;
-        if (location.pathname === "/") shell.hidden = false;
-        else shell.remove();
+        const root = document.getElementById("root");
+        if (!root) return;
+        const exactHome = window.location.pathname === "/" && window.location.search === "";
+        const hasHomePrerender = root.getAttribute("data-sarkari-prerender") === "home";
+        if (!exactHome || !hasHomePrerender) {
+          root.replaceChildren();
+          root.removeAttribute("data-sarkari-prerender");
+        }
       })();
     </script>
     <noscript>

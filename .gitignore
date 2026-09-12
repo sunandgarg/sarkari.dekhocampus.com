@@ -50,6 +50,8 @@ scripts/*
 !scripts/deploy-prod.sh
 !scripts/generate-brand-icons.mjs
 !scripts/generate-sitemap.ts
+!scripts/prerender-home.ts
+!scripts/check-home-prerender.mjs
 
 # Editor directories and files
 .vscode/*

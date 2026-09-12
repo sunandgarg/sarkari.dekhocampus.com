@@ -2,8 +2,9 @@ import { Link } from "react-router-dom";
 import { SARKARI_NAV } from "./SarkariHeader";
 import { openCookieSettings } from "@/lib/promptSequence";
 
+declare const __APP_BUILD_YEAR__: number;
+
 export function SarkariFooter() {
-  const year = new Date().getFullYear();
   return (
     <footer className="sarkari-footer">
       <div className="sarkari-footer-grid">
@@ -23,7 +24,7 @@ export function SarkariFooter() {
         </div>
       </div>
       <div className="sarkari-footer-bottom">
-        <span>Copyright © {year} sarkari.dekhocampus.com · Information for reference only</span>
+        <span>Copyright © {__APP_BUILD_YEAR__} sarkari.dekhocampus.com · Information for reference only</span>
         <button type="button" onClick={openCookieSettings}>Cookie settings</button>
       </div>
     </footer>

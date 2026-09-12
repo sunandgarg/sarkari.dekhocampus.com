@@ -6,6 +6,10 @@ const buildId =
   process.env.CF_PAGES_COMMIT_SHA ||
   process.env.GITHUB_SHA ||
   `local-${Date.now().toString(36)}`;
+const configuredBuildYear = Number(process.env.SARKARI_BUILD_YEAR);
+const buildYear = Number.isInteger(configuredBuildYear) && configuredBuildYear >= 2026
+  ? configuredBuildYear
+  : new Date().getUTCFullYear();
 
 const emitBuildVersionPlugin: Plugin = {
   name: "emit-build-version",
@@ -13,7 +17,7 @@ const emitBuildVersionPlugin: Plugin = {
     this.emitFile({
       type: "asset",
       fileName: "version.json",
-      source: JSON.stringify({ buildId }),
+      source: JSON.stringify({ buildId, buildYear }),
     });
   },
 };
@@ -50,6 +54,7 @@ export default defineConfig(({ mode }) => ({
   ].filter(Boolean),
   define: {
     __APP_BUILD_ID__: JSON.stringify(buildId),
+    __APP_BUILD_YEAR__: JSON.stringify(buildYear),
   },
   resolve: {
     alias: {

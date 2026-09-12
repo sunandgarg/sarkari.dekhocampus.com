@@ -58,6 +58,7 @@ export const publicContent = [
   "./src/lib/constant.ts",
   "./src/lib/cookiePreferences.ts",
   "./src/lib/defaultFaqs.ts",
+  "./src/lib/homePrerender.ts",
   "./src/lib/intentTracking.ts",
   "./src/lib/lazyRetry.ts",
   "./src/lib/leadCapture.ts",

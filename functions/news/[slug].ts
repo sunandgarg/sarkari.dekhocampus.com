@@ -7,6 +7,7 @@ import {
   validatePublicSarkariArticle,
   type PublicSarkariArticle,
 } from "../../src/lib/sarkariArticleBootstrap";
+import { ARTICLE_SHELL_PATH, stripHomePrerenderFromHtml } from "../../src/lib/homePrerender";
 
 const SITE_URL = "https://sarkari.dekhocampus.com";
 const DEFAULT_API_URL = "https://aws-origin.dekhocampus.com";
@@ -109,7 +110,7 @@ export function renderArticleHtml(template: string, article: ArticleRow) {
     mainEntityOfPage: canonical,
   };
 
-  let html = template.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(titleText)}</title>`);
+  let html = stripHomePrerenderFromHtml(template).replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(titleText)}</title>`);
   html = html.replace(/<link\b(?=[^>]*\brel\s*=\s*["']canonical["'])[^>]*>\s*/gi, "");
   for (const name of ["description", "keywords", "robots", "twitter:card", "twitter:title", "twitter:description", "twitter:url", "twitter:image", "twitter:image:alt"]) {
     html = removeMeta(html, "name", name);
@@ -180,10 +181,10 @@ function articleCacheKey(request: Request, slug: string, shellVersion: string) {
   return new Request(url, { method: "GET", headers: { Accept: "text/html" } });
 }
 
-async function shellVersion(template: string) {
-  const assetReferences = Array.from(template.matchAll(/(?:src|href)=["'](\/assets\/[^"']+)["']/gi), (match) => match[1]);
-  const source = assetReferences.length ? assetReferences.join("\n") : template;
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(source));
+export async function shellVersion(template: string) {
+  // HTML-only metadata, noscript, and bootstrap contract changes must rotate
+  // the edge key even when hashed asset filenames stay unchanged.
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(template));
   return Array.from(new Uint8Array(digest).slice(0, 8), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
@@ -325,7 +326,7 @@ export async function onRequest(context: PagesContext) {
   }
 
   let asset: Response;
-  const assetUrl = new URL("/", context.request.url);
+  const assetUrl = new URL(ARTICLE_SHELL_PATH, context.request.url);
   const assetRequest = new Request(assetUrl, { method: "GET", headers: { Accept: "text/html" } });
   try { asset = await context.env.ASSETS.fetch(assetRequest); } catch {
     warnEdge("shell_fetch");
@@ -428,7 +429,13 @@ export async function onRequest(context: PagesContext) {
     return unavailable(headOnly);
   }
 
-  const body = renderArticleHtml(template, article);
+  let body: string;
+  try {
+    body = renderArticleHtml(template, article);
+  } catch (error) {
+    warnEdge("shell_prerender_contract", { kind: error instanceof Error ? error.name : "unknown" });
+    return unavailable(headOnly);
+  }
   const headers = htmlHeaders(asset.headers);
   headers.set("Cache-Control", "public, max-age=0, s-maxage=60");
   headers.set("X-Sarkari-Edge-Cache", cacheBypassed ? "BYPASS" : "MISS");

@@ -1,11 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
-import { normalizeArticleSlug, onRequest, renderArticleHtml } from "../../functions/news/[slug]";
+import { normalizeArticleSlug, onRequest, renderArticleHtml, shellVersion } from "../../functions/news/[slug]";
 import {
   PUBLIC_ARTICLE_DETAIL_FIELDS,
   SARKARI_ARTICLE_BOOTSTRAP_ID,
   parseSarkariArticleBootstrap,
   type PublicSarkariArticle,
 } from "@/lib/sarkariArticleBootstrap";
+import {
+  ARTICLE_SHELL_PATH,
+  HOME_PRERENDER_END,
+  HOME_PRERENDER_START,
+} from "@/lib/homePrerender";
 
 const template = `<!doctype html><html><head>
   <title>Home</title>
@@ -51,6 +56,13 @@ describe("Sarkari article Pages Function", () => {
     expect(normalizeArticleSlug("%E0%A4%A")).toBe("");
   });
 
+  it("versions the complete compact shell, including HTML-only changes", async () => {
+    const initial = await shellVersion(template);
+    expect(await shellVersion(template)).toBe(initial);
+    expect(await shellVersion(template.replace("home description", "changed description"))).not.toBe(initial);
+    expect(initial).toMatch(/^[a-f0-9]{16}$/);
+  });
+
   it("replaces homepage metadata with escaped article metadata and crawlable fallback", () => {
     const html = renderArticleHtml(template, article);
     expect(html).toContain("<title>Railway Clerk | Sarkari DekhoCampus</title>");
@@ -82,13 +94,27 @@ describe("Sarkari article Pages Function", () => {
     expect(JSON.parse(schemaText).articleBody).toHaveLength(12_000);
   });
 
+  it("removes homepage prerender content while preserving article fallback and bootstrap", () => {
+    const prerenderedTemplate = template.replace(
+      '<div id="root"></div>',
+      `${HOME_PRERENDER_START}<div id="root" data-sarkari-prerender="home"><div class="sarkari-site"><h1>HOME ONLY</h1><div><div>nested shell</div></div></div></div>${HOME_PRERENDER_END}`,
+    );
+    const html = renderArticleHtml(prerenderedTemplate, article);
+    expect(html).toContain('<div id="root"></div>');
+    expect(html).not.toContain("HOME ONLY");
+    expect(html).not.toContain(HOME_PRERENDER_START);
+    expect(html).not.toContain(HOME_PRERENDER_END);
+    expect(html).toContain("Railway Clerk &lt;2026&gt;</h1>");
+    expect(html).toContain(`id="${SARKARI_ARTICLE_BOOTSTRAP_ID}" type="application/json"`);
+  });
+
   it("queries only published, active Sarkari content and returns a real 404 for an unknown slug", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("[]", {
       status: 200,
       headers: { "Content-Type": "application/json" },
     }));
     const assetBinding = {
-      fetch: vi.fn().mockImplementation((request: Request) => new URL(request.url).pathname === "/"
+      fetch: vi.fn().mockImplementation((request: Request) => new URL(request.url).pathname === ARTICLE_SHELL_PATH
         ? Promise.resolve(new Response(template, { status: 200, headers: { "Content-Type": "text/html" } }))
         : Promise.resolve(new Response("<h1>Not found</h1>", { status: 404, headers: { "Content-Type": "text/html" } }))),
     };
@@ -222,7 +248,7 @@ describe("Sarkari article Pages Function", () => {
     expect(await response.text()).toBe("");
     const assetRequest = assetBinding.fetch.mock.calls[0][0] as Request;
     expect(assetRequest.method).toBe("GET");
-    expect(new URL(assetRequest.url).pathname).toBe("/");
+    expect(new URL(assetRequest.url).pathname).toBe(ARTICLE_SHELL_PATH);
     expect(assetRequest.headers.has("if-modified-since")).toBe(false);
     expect(assetRequest.headers.has("range")).toBe(false);
     fetchSpy.mockRestore();
@@ -293,7 +319,7 @@ describe("Sarkari article Pages Function", () => {
     Object.defineProperty(globalThis, "caches", { configurable: true, value: { default: cache } });
     const pending: Promise<unknown>[] = [];
     const assetBinding = {
-      fetch: vi.fn().mockImplementation((request: Request) => new URL(request.url).pathname === "/"
+      fetch: vi.fn().mockImplementation((request: Request) => new URL(request.url).pathname === ARTICLE_SHELL_PATH
         ? Promise.resolve(new Response(template, { status: 200, headers: { "Content-Type": "text/html" } }))
         : Promise.resolve(new Response("<h1>Not found</h1>", { status: 404, headers: { "Content-Type": "text/html" } }))),
     };
