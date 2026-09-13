@@ -8,8 +8,8 @@ import { educationStatus } from "@/data/indianLocations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import dcLogo from "@/assets/dc-lead-logo.png";
 import { getPrefillCookie, savePrefillCookie } from "@/components/CookieConsent";
+import { SITE_CONFIG } from "@/lib/constant";
 import { markLeadSubmitted } from "@/lib/leadCapture";
 import { useInlineOtp, isValidIndianMobile, PHONE_HINT, sanitizeIndianMobile } from "@/components/LeadInlineOtp";
 import { ProgramModeToggle, type ProgramMode } from "@/components/ProgramModeToggle";
@@ -20,6 +20,7 @@ import { setLeadConsentPreference } from "@/lib/leadConsent";
 import { saveLeadPhase } from "@/lib/twoStepLead";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const dcLogo = SITE_CONFIG.compactLogoPath;
 
 interface LeadCaptureFormProps {
   variant?: "inline" | "card" | "banner" | "sidebar";

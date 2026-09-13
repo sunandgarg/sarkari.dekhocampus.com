@@ -96,6 +96,7 @@ describe("Sarkari Pages edge contract", () => {
     expect(index).toContain('sizes="180x180" href="/apple-touch-icon.png"');
     expect(index).toContain('name="twitter:card" content="summary"');
     expect(index).toContain('content="https://sarkari.dekhocampus.com/icon-512.png"');
+    expect(index).toContain('content="Sarkari DekhoCampus DC logo"');
     expect(index).toContain("<!-- SARKARI_HOME_PRERENDER_START -->");
     expect(index).toContain('id="root" data-sarkari-prerender="home"');
     expect(index).toContain('id="sarkari-home-prerender-placeholder"');
@@ -119,6 +120,22 @@ describe("Sarkari Pages edge contract", () => {
     const footer = read("src/components/sarkari/SarkariFooter.tsx");
     expect(footer).toContain("Copyright © {__APP_BUILD_YEAR__}");
     expect(footer).not.toContain("new Date()");
+    expect(footer).toContain("SITE_CONFIG.footerWordmarkPath");
+
+    const brandIconGenerator = read("scripts/generate-brand-icons.mjs");
+    expect(brandIconGenerator).toContain('const compactSource = resolve("src/assets/dc-logo.png")');
+    expect(brandIconGenerator).toContain('const wordmarkSource = resolve("src/assets/dekhocampus-logo.png")');
+    expect(brandIconGenerator).toContain('const footerWordmarkSource = resolve("src/assets/dekhocampus-footer-logo.png")');
+    expect(brandIconGenerator).toContain('["public/favicon.png", 52]');
+    expect(brandIconGenerator).not.toContain("dc-lead-logo.png");
+    expect(brandIconGenerator).toContain('"public/brand/dc-logo.webp"');
+    expect(brandIconGenerator).toContain('"public/brand/dekhocampus-wordmark.webp"');
+    expect(brandIconGenerator).toContain('"public/brand/dekhocampus-footer-wordmark.webp"');
+    expect(read("src/components/LeadCaptureForm.tsx")).toContain("const dcLogo = SITE_CONFIG.compactLogoPath");
+
+    const prerenderGuard = read("scripts/check-home-prerender.mjs");
+    expect(prerenderGuard).toContain('!index.includes("/src/assets/")');
+    expect(prerenderGuard).toContain("built logo asset is missing");
 
     const prerenderScript = read("scripts/prerender-home.ts");
     expect(prerenderScript).toContain('process.env.NODE_ENV = "development"');

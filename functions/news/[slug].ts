@@ -90,6 +90,7 @@ export function renderArticleHtml(template: string, article: ArticleRow) {
   const titleText = (rawTitle.includes("DekhoCampus") ? rawTitle : `${rawTitle} | Sarkari DekhoCampus`).slice(0, 180);
   const descriptionText = articleDescription(article);
   const image = articleImage(article);
+  const imageAlt = image === BRAND_IMAGE ? "Sarkari DekhoCampus DC logo" : article.title;
   const category = plainText(article.category || "Government update");
   const author = plainText(article.author || "Sarkari DekhoCampus Desk");
   const tags = Array.isArray(article.tags) ? article.tags.map(plainText).filter(Boolean) : [];
@@ -135,13 +136,13 @@ export function renderArticleHtml(template: string, article: ArticleRow) {
     `<meta property="og:description" content="${escapeHtml(descriptionText)}">`,
     `<meta property="og:url" content="${escapeHtml(canonical)}">`,
     `<meta property="og:image" content="${escapeHtml(image)}">`,
-    `<meta property="og:image:alt" content="${escapeHtml(article.title)}">`,
+    `<meta property="og:image:alt" content="${escapeHtml(imageAlt)}">`,
     `<meta name="twitter:card" content="${image === BRAND_IMAGE ? "summary" : "summary_large_image"}">`,
     `<meta name="twitter:title" content="${escapeHtml(titleText)}">`,
     `<meta name="twitter:description" content="${escapeHtml(descriptionText)}">`,
     `<meta name="twitter:url" content="${escapeHtml(canonical)}">`,
     `<meta name="twitter:image" content="${escapeHtml(image)}">`,
-    `<meta name="twitter:image:alt" content="${escapeHtml(article.title)}">`,
+    `<meta name="twitter:image:alt" content="${escapeHtml(imageAlt)}">`,
     `<script id="ld-json-page" type="application/ld+json">${JSON.stringify(schema).replace(/</g, "\\u003c")}</script>`,
   ].join("\n    ");
 

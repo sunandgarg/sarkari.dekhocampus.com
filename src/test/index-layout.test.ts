@@ -5,7 +5,23 @@ import { resolve } from "path";
 describe("Sarkari homepage layout (static source assertions)", () => {
   const indexSrc = readFileSync(resolve(process.cwd(), "src/pages/Index.tsx"), "utf8");
   const headerSrc = readFileSync(resolve(process.cwd(), "src/components/sarkari/SarkariHeader.tsx"), "utf8");
+  const footerSrc = readFileSync(resolve(process.cwd(), "src/components/sarkari/SarkariFooter.tsx"), "utf8");
+  const configSrc = readFileSync(resolve(process.cwd(), "src/lib/constant.ts"), "utf8");
   const stylesSrc = readFileSync(resolve(process.cwd(), "src/index.css"), "utf8");
+
+  it("uses the official full wordmark and compact DC mark in their intended contexts", () => {
+    expect(configSrc).toContain('compactLogoPath: "/brand/dc-logo.webp"');
+    expect(configSrc).toContain('wordmarkPath: "/brand/dekhocampus-wordmark.webp"');
+    expect(configSrc).toContain('footerWordmarkPath: "/brand/dekhocampus-footer-wordmark.webp"');
+    expect(headerSrc).toContain('<source media="(max-width: 560px)" srcSet={SITE_CONFIG.compactLogoPath} />');
+    expect(headerSrc).toContain('<img src={SITE_CONFIG.wordmarkPath} alt="" width="256" height="70"');
+    expect(headerSrc).toContain('aria-label="Sarkari DekhoCampus home"');
+    expect(headerSrc).not.toContain('className="sarkari-emblem"');
+    expect(headerSrc).not.toMatch(/>SD</);
+    expect(indexSrc).toContain('<img src={SITE_CONFIG.compactLogoPath} alt="" width="128" height="123" aria-hidden="true" />');
+    expect(footerSrc).toContain('<img src={SITE_CONFIG.footerWordmarkPath} alt="DekhoCampus" width="308" height="102"');
+    expect(stylesSrc).toMatch(/@media \(max-width: 560px\)[\s\S]*\.sarkari-brand-picture \{ width: 34px; aspect-ratio: 64 \/ 62; \}/);
+  });
 
   it("provides search, trust guidance, alerts and all primary update boards", () => {
     expect(indexSrc).toMatch(/Search exam, department, post or notification/);

@@ -96,6 +96,14 @@ describe("Sarkari article Pages Function", () => {
     expect(JSON.parse(schemaText).articleBody).toHaveLength(12_000);
   });
 
+  it("describes the compact DC mark when it is used as the article fallback image", () => {
+    const html = renderArticleHtml(template, { ...article, featured_image: "" });
+    expect(html).toContain('property="og:image" content="https://sarkari.dekhocampus.com/icon-512.png"');
+    expect(html).toContain('property="og:image:alt" content="Sarkari DekhoCampus DC logo"');
+    expect(html).toContain('name="twitter:image:alt" content="Sarkari DekhoCampus DC logo"');
+    expect(html).toContain('name="twitter:card" content="summary"');
+  });
+
   it("removes homepage prerender content while preserving article fallback and bootstrap", () => {
     const prerenderedTemplate = template.replace(
       '<div id="root"></div>',

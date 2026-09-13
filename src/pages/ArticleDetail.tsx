@@ -99,7 +99,7 @@ export default function ArticleDetail() {
     description: article?.excerpt || "Read the latest education and career articles.",
     canonical: article ? `/news/${article.slug}` : undefined,
     ogImage: seoImage,
-    ogImageAlt: article?.title || "Sarkari DekhoCampus",
+    ogImageAlt: usesBrandSeoImage ? "Sarkari DekhoCampus DC logo" : article?.title,
     ogType: "article",
     twitterCard: usesBrandSeoImage ? "summary" : "summary_large_image",
     noIndex: articleLoadState === "not-found",

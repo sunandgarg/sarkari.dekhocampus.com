@@ -15,7 +15,7 @@ export default function SarkariNotFound() {
         description="This Sarkari DekhoCampus page could not be found. Search the latest government jobs, results and admit cards."
         canonical={pathname}
         ogImage={SITE_CONFIG.ogImagePath}
-        ogImageAlt="Sarkari DekhoCampus"
+        ogImageAlt="Sarkari DekhoCampus DC logo"
         twitterCard="summary"
         noIndex
       />

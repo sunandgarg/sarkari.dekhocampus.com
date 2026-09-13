@@ -5,7 +5,10 @@ export const SITE_CONFIG = {
   supportEmail: "outreach@dekhocampus.com",
   searchPath: "/",
   ogImagePath: "/icon-512.png",
-  logoPath: "/brand/dekhocampus-blog-logo.png",
+  compactLogoPath: "/brand/dc-logo.webp",
+  wordmarkPath: "/brand/dekhocampus-wordmark.webp",
+  footerWordmarkPath: "/brand/dekhocampus-footer-wordmark.webp",
+  logoPath: "/brand/dekhocampus-wordmark.webp",
 } as const;
 
 export const SITE_URL = `${SITE_CONFIG.scheme}://${SITE_CONFIG.domain}`;

@@ -12,11 +12,11 @@
 .sarkari-header { position: sticky; z-index: 40; top: 0; border-bottom: 1px solid #e8eaf0; background: rgba(255,255,255,.96); box-shadow: 0 8px 24px rgba(18,25,39,.04); backdrop-filter: blur(14px); }
 .sarkari-header-inner { width: min(1240px, calc(100% - 40px)); min-height: 72px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .sarkari-brand { display: inline-flex; align-items: center; gap: 11px; color: #111827; text-decoration: none; }
-.sarkari-emblem { width: 43px; height: 43px; display: grid; place-items: center; border-radius: 11px; background: linear-gradient(145deg, #ff5a35, #e83d21); box-shadow: 0 7px 18px rgba(232,61,33,.25); color: #fff; font-size: 14px; font-weight: 900; letter-spacing: -.03em; }
-.sarkari-wordmark { display: flex; flex-direction: column; line-height: 1; }
-.sarkari-wordmark strong { font-size: 17px; font-weight: 900; letter-spacing: -.045em; }
-.sarkari-wordmark strong span { color: #f04d2f; }
-.sarkari-wordmark small { margin-top: 6px; color: #9aa1ae; font-size: 7px; font-weight: 900; letter-spacing: .19em; }
+.sarkari-brand-picture { width: 132px; aspect-ratio: 256 / 70; display: block; flex: 0 0 auto; }
+.sarkari-brand-picture img { width: 100%; height: 100%; display: block; object-fit: contain; }
+.sarkari-portal-label { display: flex; flex-direction: column; padding-left: 11px; border-left: 1px solid #e4e6ea; line-height: 1; }
+.sarkari-portal-label strong { font-size: 14px; font-weight: 900; letter-spacing: -.025em; }
+.sarkari-portal-label small { margin-top: 6px; color: #9aa1ae; font-size: 7px; font-weight: 900; letter-spacing: .14em; }
 .sarkari-nav-bar { display: flex; align-items: center; }
 .sarkari-nav-bar nav { display: flex; align-items: center; gap: 25px; }
 .sarkari-nav-bar nav a { color: #343b48; font-size: 13px; font-weight: 700; text-decoration: none; transition: color .18s ease; }
@@ -38,6 +38,7 @@
 .sarkari-hero-inner { position: relative; z-index: 1; width: min(850px, calc(100% - 36px)); margin: 0 auto; padding: 78px 0 68px; text-align: center; }
 .sarkari-eyebrow { display: inline-flex; align-items: center; gap: 7px; padding: 8px 13px; border-radius: 999px; background: #fff0e7; color: #b9462b; font-size: 11px; font-weight: 800; }
 .sarkari-eyebrow svg { width: 14px; height: 14px; fill: #ff8b67; }
+.sarkari-eyebrow img { width: 20px; height: 20px; object-fit: contain; }
 .sarkari-hero h1 { max-width: 760px; margin: 24px auto 16px; color: #111827; font-size: clamp(39px, 6vw, 68px); font-weight: 900; letter-spacing: -.058em; line-height: 1.02; }
 .sarkari-hero h1 em { display: block; color: #f04d2f; font-style: normal; }
 .sarkari-hero > .sarkari-hero-inner > p { max-width: 650px; margin: 0 auto; color: #646c79; font-size: clamp(15px, 2vw, 18px); line-height: 1.72; }
@@ -274,6 +275,9 @@
 .sarkari-footer-grid { width: min(1180px, calc(100% - 36px)); margin: 0 auto; display: grid; grid-template-columns: 1.2fr .8fr 1fr; gap: 44px; padding: 48px 0; }
 .sarkari-footer h2, .sarkari-footer h3 { margin: 0 0 13px; color: #fff; font: inherit; letter-spacing: -.02em; }
 .sarkari-footer h2 { color: #ff8062; font-size: 21px; font-weight: 900; }
+.sarkari-footer-brand { display: flex; align-items: center; gap: 14px; }
+.sarkari-footer-brand img { width: 154px; height: auto; display: block; object-fit: contain; }
+.sarkari-footer-brand span { padding-left: 14px; border-left: 1px solid rgba(255,255,255,.2); font-size: 12px; line-height: 1.25; text-transform: uppercase; }
 .sarkari-footer h3 { font-size: 13px; font-weight: 800; }
 .sarkari-footer p { margin: 0; font-size: 11px; line-height: 1.75; }
 .sarkari-footer-links { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
@@ -319,9 +323,11 @@
 }
 
 @media (max-width: 560px) {
-  .sarkari-wordmark strong { font-size: 14px; }
-  .sarkari-wordmark small { font-size: 6px; }
-  .sarkari-emblem { width: 38px; height: 38px; border-radius: 9px; font-size: 12px; }
+  .sarkari-brand { gap: 8px; }
+  .sarkari-brand-picture { width: 34px; aspect-ratio: 64 / 62; }
+  .sarkari-portal-label { padding-left: 9px; }
+  .sarkari-portal-label strong { font-size: 13px; }
+  .sarkari-portal-label small { margin-top: 5px; font-size: 6px; }
   .sarkari-search-button, .sarkari-menu-button { width: 36px; height: 36px; }
   .sarkari-hero-inner { width: calc(100% - 24px); padding: 46px 0 52px; }
   .sarkari-eyebrow { font-size: 9px; }
@@ -433,9 +439,9 @@
 .sarkari-not-found a:hover { transform: translateY(-1px); }
 .sarkari-not-found svg { width: 16px; height: 16px; }
 .sarkari-header { border-color: var(--sarkari-border); background: hsl(var(--card) / .98); box-shadow: 0 2px 10px hsl(var(--foreground) / .035); backdrop-filter: none; }
-.sarkari-emblem { border-radius: 8px; background: var(--sarkari-primary); box-shadow: none; }
-.sarkari-wordmark strong span { color: var(--sarkari-primary); }
-.sarkari-wordmark small { color: var(--sarkari-muted); letter-spacing: .14em; }
+.sarkari-portal-label { border-color: var(--sarkari-border); }
+.sarkari-portal-label strong { color: var(--sarkari-ink); }
+.sarkari-portal-label small { color: var(--sarkari-muted); }
 .sarkari-nav-bar nav a:hover, .sarkari-nav-bar nav a.is-active { color: var(--sarkari-primary); }
 .sarkari-nav-bar nav a.is-active { text-decoration-color: var(--sarkari-primary-border); }
 .sarkari-search-button:hover, .sarkari-menu-button:hover { background: var(--sarkari-subtle); }

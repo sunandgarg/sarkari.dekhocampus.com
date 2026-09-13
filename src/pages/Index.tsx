@@ -1,4 +1,4 @@
-import { ArrowRight, Award, BellRing, BookOpenCheck, BriefcaseBusiness, Building2, Calculator, CalendarDays, CheckCircle2, ChevronRight, ClipboardList, FileCheck2, GraduationCap, Hammer, HeartPulse, Keyboard, Landmark, Mail, MapPin, School, Search, Shield, ShieldCheck, Siren, Sparkles, Stethoscope, TrainFront, UserRoundSearch, Wrench } from "lucide-react";
+import { ArrowRight, Award, BellRing, BookOpenCheck, BriefcaseBusiness, Building2, Calculator, CalendarDays, CheckCircle2, ChevronRight, ClipboardList, FileCheck2, GraduationCap, Hammer, HeartPulse, Keyboard, Landmark, Mail, MapPin, School, Search, Shield, ShieldCheck, Siren, Stethoscope, TrainFront, UserRoundSearch, Wrench } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
@@ -208,7 +208,7 @@ export default function Index() {
         canonical={canonicalPath}
         keywords="sarkari result, government jobs, admit card, exam result, sarkari naukri, online form"
         ogImage={SITE_CONFIG.ogImagePath}
-        ogImageAlt="Sarkari DekhoCampus"
+        ogImageAlt="Sarkari DekhoCampus DC logo"
         twitterCard="summary"
         noIndex={Boolean(searchTerm) || emptyArchive || unsupportedArchiveQuery}
       />
@@ -218,7 +218,7 @@ export default function Index() {
       <main id="content">
         <section className="sarkari-hero">
           <div className="sarkari-hero-inner">
-            <span className="sarkari-eyebrow"><Sparkles /> AI-assisted discovery, written for people</span>
+            <span className="sarkari-eyebrow"><img src={SITE_CONFIG.compactLogoPath} alt="" width="128" height="123" aria-hidden="true" /> AI-assisted discovery, written for people</span>
             <h1>Your shortcut to <em>government opportunities</em></h1>
             <p>Find jobs, results, admit cards and answer keys in a clear format, with important dates and official next steps up front.</p>
             <form className="sarkari-search" role="search" aria-label="Search Sarkari updates" onSubmit={submitSearch}>

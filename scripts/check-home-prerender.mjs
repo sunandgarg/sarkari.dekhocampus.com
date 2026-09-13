@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { gzipSync } from "node:zlib";
 
@@ -34,6 +34,15 @@ requireContract(prerender.includes('class="sarkari-footer"'), "real footer is mi
 requireContract(Number.isInteger(version.buildYear) && prerender.includes(`Copyright © <!-- -->${version.buildYear}<!-- -->`), "footer does not use the client build year");
 requireContract(!index.includes("sarkari-home-prerender-placeholder"), "placeholder leaked into the build");
 requireContract(!index.includes("dc-first-paint-shell"), "legacy imitation shell remains");
+requireContract(!index.includes("/src/assets/") && !articleShell.includes("/src/assets/"), "development-only asset URL leaked into a production shell");
+for (const logoPath of [
+  "/brand/dc-logo.webp",
+  "/brand/dekhocampus-wordmark.webp",
+  "/brand/dekhocampus-footer-wordmark.webp",
+]) {
+  requireContract(prerender.includes(logoPath), `homepage prerender is missing ${logoPath}`);
+  requireContract(existsSync(resolve(root, "dist", logoPath.slice(1))), `built logo asset is missing ${logoPath}`);
+}
 requireContract(count(index, "<main") === 1 && count(index, "<h1") === 1, "no-JavaScript homepage must have one main and one h1");
 requireContract(!/<noscript\b[^>]*>\s*<main/i.test(index), "generic noscript duplicates the real SSR homepage");
 requireContract(!prerender.includes('data-testid="cookie-consent-bar"'), "cookie UI mounted during SSR");
