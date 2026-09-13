@@ -1,14 +1,20 @@
-import { ArrowRight, Award, BellRing, BookOpenCheck, BriefcaseBusiness, Building2, Calculator, CalendarDays, CheckCircle2, ChevronRight, ClipboardList, FileCheck2, GraduationCap, Hammer, HeartPulse, Keyboard, Landmark, Mail, MapPin, School, Search, Shield, ShieldCheck, Siren, Stethoscope, TrainFront, UserRoundSearch, Wrench } from "lucide-react";
+import { ArrowRight, Award, BellRing, BookOpenCheck, BriefcaseBusiness, Building2, Calculator, CalendarDays, ChevronRight, ClipboardList, GraduationCap, Hammer, HeartPulse, Keyboard, Landmark, Mail, MapPin, School, Search, Shield, Siren, Stethoscope, TrainFront, UserRoundSearch, Wrench } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { SEO } from "@/components/SEO";
 import { SarkariFooter } from "@/components/sarkari/SarkariFooter";
 import { SarkariHeader } from "@/components/sarkari/SarkariHeader";
-import { SarkariCarousel } from "@/components/sarkari/SarkariCarousel";
 import { SARKARI_ARCHIVE_PAGE_SIZE, usePublicArticleArchive, useSarkariHomepageArticles, type DbArticle } from "@/hooks/useArticlesData";
 import { isSarkariCategory, normalizeSarkariCategory, SARKARI_CATEGORIES } from "@/lib/sarkariCategories";
 import { SITE_CONFIG } from "@/lib/constant";
+
+declare const __APP_BUILD_YEAR__: number;
+
+const buildYear =
+  typeof __APP_BUILD_YEAR__ === "number"
+    ? __APP_BUILD_YEAR__
+    : new Date().getFullYear();
 
 type PortalArticle = {
   slug: string;
@@ -16,23 +22,8 @@ type PortalArticle = {
   description: string;
   category: string;
   createdAt: string;
-  tags: string[];
   isNew?: boolean;
 };
-
-const categoryIcons = [BriefcaseBusiness, CheckCircle2, FileCheck2, BookOpenCheck, GraduationCap, CalendarDays, Landmark];
-
-const categoryGuidance: Record<string, { action: string; detail: string }> = {
-  "Latest Jobs": { action: "Find a job", detail: "Open forms & vacancies" },
-  Results: { action: "Check a result", detail: "Scores, merit lists & cut-offs" },
-  "Admit Card": { action: "Get an admit card", detail: "Hall tickets & exam cities" },
-  "Answer Key": { action: "See an answer key", detail: "Responses & objections" },
-  Admissions: { action: "Explore admission", detail: "Counselling & applications" },
-  Syllabus: { action: "Plan preparation", detail: "Syllabus & exam patterns" },
-  Scholarships: { action: "Find support", detail: "Scholarships & eligibility" },
-};
-
-const popularSearches = ["10th Pass", "Railway", "SSC", "Bank"];
 
 const directoryItemIcons: Record<string, LucideIcon> = {
   Apprentice: Hammer,
@@ -123,16 +114,26 @@ const toPortalArticle = (article: DbArticle): PortalArticle => ({
   description: article.description || "Read the complete notification, important dates and official instructions.",
   category: normalizeSarkariCategory(article.category || article.vertical),
   createdAt: article.created_at,
-  tags: article.tags || [],
   isNew: Date.now() - new Date(article.created_at).getTime() < 7 * 86400000,
 });
+
+const TRENDING_ITEM_LIMIT = 8;
+const UPDATE_ITEM_LIMIT = Math.min(SARKARI_ARCHIVE_PAGE_SIZE, 8);
+const categorySectionTitles: Record<string, string> = {
+  "Latest Jobs": `Latest Govt Jobs ${buildYear}`,
+  Results: "Latest Results",
+  "Admit Card": "Latest Admit Cards",
+  "Answer Key": "Latest Answer Keys",
+  Admissions: "Latest Admissions",
+  Syllabus: "Latest Syllabus",
+  Scholarships: "Latest Scholarships",
+};
 
 export default function Index() {
   const location = useLocation();
   const { tag: routeTag = "" } = useParams<{ tag?: string }>();
   const [params, setParams] = useSearchParams();
   const [query, setQuery] = useState(params.get("q") || "");
-  const [expandedDirectories, setExpandedDirectories] = useState<Record<string, boolean>>({});
   const requestedCategory = params.get("category") || "";
   const activeCategory = isSarkariCategory(requestedCategory) ? requestedCategory : "";
   const searchTerm = (params.get("q") || "").trim();
@@ -218,159 +219,128 @@ export default function Index() {
       <main id="content">
         <section className="sarkari-hero">
           <div className="sarkari-hero-inner">
-            <span className="sarkari-eyebrow"><img src={SITE_CONFIG.compactLogoPath} alt="" width="128" height="123" aria-hidden="true" /> AI-assisted discovery, written for people</span>
+            <span className="sarkari-eyebrow"><img src={SITE_CONFIG.compactLogoPath} alt="" width="128" height="123" aria-hidden="true" /> Fresh government updates</span>
             <h1>Your shortcut to <em>government opportunities</em></h1>
-            <p>Find jobs, results, admit cards and answer keys in a clear format, with important dates and official next steps up front.</p>
+            <p>Find jobs, results, admit cards and answer keys, with important dates and official next steps up front.</p>
             <form className="sarkari-search" role="search" aria-label="Search Sarkari updates" onSubmit={submitSearch}>
               <label className="sr-only" htmlFor="sarkari-home-search">Search Sarkari updates</label>
               <Search aria-hidden="true" />
-              <input id="sarkari-home-search" name="q" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search exam, department, post or notification" aria-describedby="sarkari-search-help" />
-              <button type="submit">Find updates</button>
+              <input id="sarkari-home-search" name="q" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search exam, department, post or notification" />
+              <button type="submit">Search</button>
             </form>
-            <div className="sarkari-search-help" id="sarkari-search-help">
-              <span>Popular:</span>
-              {popularSearches.map((item) => <Link key={item} to={`/?q=${encodeURIComponent(item)}`}>{item}</Link>)}
-            </div>
-            <div className="sarkari-trust-row" aria-label="Portal commitments">
-              <span><CheckCircle2 /> Clear eligibility</span>
-              <span><ShieldCheck /> Official links first</span>
-              <span><CheckCircle2 /> No job fees charged by us</span>
-            </div>
           </div>
         </section>
 
-        <div className="sarkari-main">
-          <section className="sarkari-task-dock" aria-labelledby="task-dock-title">
-            <div className="sarkari-dock-intro">
-              <span>Start here</span>
-              <h2 id="task-dock-title">What do you want to do?</h2>
-              <p>Choose one clear next step.</p>
-            </div>
-            <div className="sarkari-category-dock">
-              {SARKARI_CATEGORIES.map((category, index) => {
-                const Icon = categoryIcons[index];
-                const guidance = categoryGuidance[category];
-                return (
-                  <Link key={category} to={`/?category=${encodeURIComponent(category)}`}>
-                    <Icon aria-hidden="true" />
-                    <span><strong>{guidance.action}</strong><small>{guidance.detail}</small></span>
-                    <ChevronRight aria-hidden="true" />
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-
+        <div className="sarkari-main sarkari-dense-home">
           {!hasFilters && headlineArticles.length > 0 && (
-            <>
-              <section className="sarkari-alert-strip" aria-label="Latest alerts">
-                <strong><BellRing /> Latest alerts</strong>
-                <div>{headlineArticles.slice(0, 4).map((article, index) => <span key={article.slug}><Link to={`/news/${article.slug}`}>{article.title}</Link>{index < Math.min(3, headlineArticles.length - 1) && <i>•</i>}</span>)}</div>
-              </section>
-
-              <section className="sarkari-trending" aria-labelledby="trending-heading">
-                <div className="sarkari-section-heading">
-                  <div><span>Updated daily</span><h2 id="trending-heading">Trending government updates</h2></div>
-                  <Link to="/?category=Latest%20Jobs">View all <ArrowRight /></Link>
-                </div>
-                <div className="sarkari-trending-grid">
-                  <SarkariCarousel ariaLabel="Trending government updates">
-                  {headlineArticles.slice(0, SARKARI_ARCHIVE_PAGE_SIZE).map((article) => (
-                    <Link className="sarkari-trending-card" key={article.slug} to={`/news/${article.slug}`}>
-                      <div><span>{article.category}</span>{article.isNew && <em>New</em>}</div>
-                      <h3>{article.title}</h3>
-                      <p>{article.description}</p>
-                      <footer><time dateTime={article.createdAt}>{shortDate.format(new Date(article.createdAt))}</time><ArrowRight /></footer>
-                    </Link>
-                  ))}
-                  </SarkariCarousel>
-                </div>
-              </section>
-            </>
+            <section className="sarkari-trending sarkari-dense-trending" aria-labelledby="trending-heading">
+              <div className="sarkari-section-heading sarkari-dense-section-heading">
+                <div><span>Updated daily</span><h2 id="trending-heading">Trending Govt Jobs</h2></div>
+                <Link to="/?category=Latest%20Jobs">View More <ArrowRight aria-hidden="true" /></Link>
+              </div>
+              <div className="sarkari-trending-grid sarkari-dense-trending-grid">
+                {headlineArticles.slice(0, TRENDING_ITEM_LIMIT).map((article) => (
+                  <Link className="sarkari-trending-card sarkari-dense-trending-card" key={article.slug} to={`/news/${article.slug}`}>
+                    <div className="sarkari-dense-card-label"><span>{article.category}</span>{article.isNew && <em>New</em>}</div>
+                    <h3>{article.title}</h3>
+                    <p>{article.description}</p>
+                    <footer>
+                      <span><CalendarDays aria-hidden="true" /> Published <time dateTime={article.createdAt}>{shortDate.format(new Date(article.createdAt))}</time></span>
+                      <ArrowRight aria-hidden="true" />
+                    </footer>
+                  </Link>
+                ))}
+              </div>
+            </section>
           )}
 
           {hasFilters && (
-          <div className="sarkari-filter-summary" role="status" aria-live="polite">
-            <p>Showing <strong>{archiveArticles.length}</strong> update{archiveArticles.length === 1 ? "" : "s"}{activeCategory ? ` in ${activeCategory}` : ""}{tagTerm ? ` tagged “${tagTerm}”` : ""}{searchTerm ? ` for “${searchTerm}”` : ""}{currentPage > 1 ? ` on page ${currentPage}` : ""}</p>
-            <Link to="/">Clear filters</Link>
-          </div>
-        )}
+            <div className="sarkari-filter-summary" role="status" aria-live="polite">
+              <p>Showing <strong>{archiveArticles.length}</strong> update{archiveArticles.length === 1 ? "" : "s"}{activeCategory ? ` in ${activeCategory}` : ""}{tagTerm ? ` tagged “${tagTerm}”` : ""}{searchTerm ? ` for “${searchTerm}”` : ""}{currentPage > 1 ? ` on page ${currentPage}` : ""}</p>
+              <Link to="/">Clear filters</Link>
+            </div>
+          )}
 
           {loadError ? (
-          <div className="sarkari-empty" role="alert">We could not load the latest updates. Please try again shortly.</div>
-        ) : isLoading ? (
-          <div className="sarkari-loading">Loading latest updates...</div>
-        ) : visibleGroups.length ? (
-          <section className="sarkari-update-sections" aria-label="Latest updates by category">
-            {visibleGroups.map((group, groupIndex) => (
-              <section className="sarkari-update-row" key={group.category}>
-                <div className="sarkari-update-row-heading">
-                  <span>{groupIndex % 3 === 0 ? <CalendarDays /> : groupIndex % 3 === 1 ? <FileCheck2 /> : <CheckCircle2 />}</span>
-                  <div><small>Latest section</small><h2>{group.category}</h2></div>
-                  {!hasFilters && <Link to={`/?category=${encodeURIComponent(group.category)}`}>View all <ArrowRight /></Link>}
-                </div>
-                {group.items.length ? (
-                  <SarkariCarousel ariaLabel={`${group.category} updates`}>
-                    {group.items.slice(0, 9).map((article) => (
-                      <Link className="sarkari-update-card" key={article.slug} to={`/news/${article.slug}`}>
-                        <div><span>{article.category}</span>{article.isNew && <em>New</em>}</div>
-                        <h3>{article.title}</h3>
-                        <p>{article.description}</p>
-                        <footer><time dateTime={article.createdAt}>{shortDate.format(new Date(article.createdAt))}</time><ArrowRight /></footer>
-                      </Link>
-                    ))}
-                  </SarkariCarousel>
-                ) : <p className="sarkari-empty">No matching updates found.</p>}
-              </section>
-            ))}
-            {hasFilters && (currentPage > 1 || archiveQuery.data?.hasNextPage) && (
-              <nav className="sarkari-archive-pagination" aria-label="Update results pages">
-                {currentPage > 1 ? <Link to={archiveHref(currentPage - 1)}>Previous</Link> : <span aria-hidden="true" />}
-                <span>Page {currentPage}</span>
-                {archiveQuery.data?.hasNextPage ? <Link to={archiveHref(currentPage + 1)}>Next</Link> : <span aria-hidden="true" />}
-              </nav>
-            )}
-          </section>
-        ) : <div className="sarkari-empty">No published updates are available yet.</div>}
+            <div className="sarkari-empty" role="alert">We could not load the latest updates. Please try again shortly.</div>
+          ) : isLoading ? (
+            <div className="sarkari-loading">Loading latest updates...</div>
+          ) : visibleGroups.length ? (
+            <section className="sarkari-update-sections sarkari-dense-update-sections" aria-label="Latest updates by category">
+              {visibleGroups.map((group, groupIndex) => (
+                <section className="sarkari-update-row sarkari-dense-update-row" key={group.category} aria-labelledby={`sarkari-update-heading-${groupIndex}`}>
+                  <div className="sarkari-update-row-heading">
+                    <div>
+                      <small>{hasFilters ? "Matching updates" : "Latest section"}</small>
+                      <h2 id={`sarkari-update-heading-${groupIndex}`}>{hasFilters ? group.category : (categorySectionTitles[group.category] || group.category)}</h2>
+                    </div>
+                    {!hasFilters && <Link to={`/?category=${encodeURIComponent(group.category)}`}>View More <ArrowRight aria-hidden="true" /></Link>}
+                  </div>
+                  {group.items.length ? (
+                    <ol className="sarkari-update-grid sarkari-dense-update-grid" start={hasFilters ? (currentPage - 1) * SARKARI_ARCHIVE_PAGE_SIZE + 1 : undefined}>
+                      {group.items.slice(0, hasFilters ? SARKARI_ARCHIVE_PAGE_SIZE : UPDATE_ITEM_LIMIT).map((article, articleIndex) => (
+                        <li className="sarkari-update-card sarkari-dense-update-card" key={article.slug}>
+                          <Link to={`/news/${article.slug}`}>
+                            <span className="sarkari-update-number" aria-hidden="true">{hasFilters ? (currentPage - 1) * SARKARI_ARCHIVE_PAGE_SIZE + articleIndex + 1 : articleIndex + 1}</span>
+                            <span className="sarkari-dense-update-title">{article.title}</span>
+                            {article.isNew && <span className="sarkari-dense-new-label">New</span>}
+                          </Link>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : <p className="sarkari-empty">No matching updates found.</p>}
+                </section>
+              ))}
+              {hasFilters && (currentPage > 1 || archiveQuery.data?.hasNextPage) && (
+                <nav className="sarkari-archive-pagination" aria-label="Update results pages">
+                  {currentPage > 1 ? <Link to={archiveHref(currentPage - 1)}>Previous</Link> : <span aria-hidden="true" />}
+                  <span>Page {currentPage}</span>
+                  {archiveQuery.data?.hasNextPage ? <Link to={archiveHref(currentPage + 1)}>Next</Link> : <span aria-hidden="true" />}
+                </nav>
+              )}
+            </section>
+          ) : <div className="sarkari-empty">No published updates are available yet.</div>}
 
           {!hasFilters && (
-            <section className="sarkari-discovery" aria-label="Browse government jobs">
-              {directoryGroups.map(({ eyebrow, title, icon: Icon, items }) => {
-                const expanded = Boolean(expandedDirectories[title]);
-                return (
-                <div className={`sarkari-directory ${expanded ? "is-expanded" : ""}`} key={title}>
-                  <div className="sarkari-section-heading">
-                    <div><span>{eyebrow}</span><h2>{title}</h2></div>
-                    <div className="sarkari-directory-actions"><Icon aria-hidden="true" /><button type="button" onClick={() => setExpandedDirectories((current) => ({ ...current, [title]: !expanded }))} aria-expanded={expanded}>{expanded ? "Show less" : `Show all ${items.length}`}</button></div>
+            <section className="sarkari-discovery sarkari-dense-discovery" aria-label="Browse government jobs">
+              {directoryGroups.map(({ eyebrow, title, icon: Icon, items }, groupIndex) => (
+                <section className="sarkari-browse-section" key={title} aria-labelledby={`sarkari-browse-heading-${groupIndex}`}>
+                  <div className="sarkari-section-heading sarkari-dense-section-heading">
+                    <div><span>{eyebrow}</span><h2 id={`sarkari-browse-heading-${groupIndex}`}>{title}</h2></div>
+                    <Icon aria-hidden="true" />
                   </div>
-                  <div className="sarkari-directory-grid">
+                  <ul className="sarkari-browse-grid">
                     {items.map((item) => {
                       const ItemIcon = directoryItemIcons[item] || BriefcaseBusiness;
                       return (
-                        <Link key={item} to={`/?q=${encodeURIComponent(item)}`}>
-                          <span className="sarkari-directory-item-label"><i className="sarkari-item-icon"><ItemIcon aria-hidden="true" /></i><span>{item}</span></span>
-                          <ChevronRight aria-hidden="true" />
-                        </Link>
+                        <li key={item}>
+                          <Link className="sarkari-browse-card" to={`/?q=${encodeURIComponent(item)}`}>
+                            <span className="sarkari-directory-item-label"><i className="sarkari-item-icon"><ItemIcon aria-hidden="true" /></i><span>{item}</span></span>
+                            <ChevronRight aria-hidden="true" />
+                          </Link>
+                        </li>
                       );
                     })}
-                  </div>
-                </div>
-              );})}
+                  </ul>
+                </section>
+              ))}
 
-              <div className={`sarkari-directory sarkari-states ${expandedDirectories.states ? "is-expanded" : ""}`}>
-                <div className="sarkari-section-heading">
-                  <div><span>Opportunities near you</span><h2>Government jobs by state</h2></div>
-                  <div className="sarkari-directory-actions"><MapPin aria-hidden="true" /><button type="button" onClick={() => setExpandedDirectories((current) => ({ ...current, states: !current.states }))} aria-expanded={Boolean(expandedDirectories.states)}>{expandedDirectories.states ? "Show less" : `Show all ${states.length}`}</button></div>
+              <section className="sarkari-browse-section sarkari-states" aria-labelledby="sarkari-state-heading">
+                <div className="sarkari-section-heading sarkari-dense-section-heading">
+                  <div><span>Opportunities near you</span><h2 id="sarkari-state-heading">Government jobs by state</h2></div>
+                  <MapPin aria-hidden="true" />
                 </div>
-                <div className="sarkari-directory-grid">
+                <ul className="sarkari-browse-grid">
                   {states.map((state) => (
-                    <Link key={state} to={`/?q=${encodeURIComponent(state)}`}>
-                      <span className="sarkari-directory-item-label"><i className="sarkari-state-code" aria-hidden="true">{stateCodes[state]}</i><span>{state}</span></span>
-                      <ChevronRight aria-hidden="true" />
-                    </Link>
+                    <li key={state}>
+                      <Link className="sarkari-browse-card" to={`/?q=${encodeURIComponent(state)}`}>
+                        <span className="sarkari-directory-item-label"><i className="sarkari-state-code" aria-hidden="true">{stateCodes[state]}</i><span>{state}</span></span>
+                        <ChevronRight aria-hidden="true" />
+                      </Link>
+                    </li>
                   ))}
-                </div>
-              </div>
+                </ul>
+              </section>
 
               <aside className="sarkari-alert-cta" aria-label="Daily update alerts">
                 <div>
@@ -379,9 +349,9 @@ export default function Index() {
                   <p>Check fresh jobs, results, admit cards and answer keys through our free article alert hub.</p>
                 </div>
                 {alertChannelUrl ? (
-                  <a href={alertChannelUrl} target="_blank" rel="noopener noreferrer">Join free alert channel <ArrowRight /></a>
+                  <a href={alertChannelUrl} target="_blank" rel="noopener noreferrer">Join free alert channel <ArrowRight aria-hidden="true" /></a>
                 ) : (
-                  <Link to="/?category=Latest%20Jobs">See today&apos;s updates <ArrowRight /></Link>
+                  <Link to="/?category=Latest%20Jobs">See today&apos;s updates <ArrowRight aria-hidden="true" /></Link>
                 )}
               </aside>
             </section>
@@ -390,7 +360,7 @@ export default function Index() {
           <section className="sarkari-about">
             <span>Simple. Useful. Responsible.</span>
             <h2>Government updates without the noise</h2>
-            <p>Sarkari DekhoCampus brings job notifications, exam results, admit cards, answer keys, admissions and scholarships into a clear article-first experience. Important eligibility, dates and next steps are placed up front.</p>
+            <p>Sarkari DekhoCampus brings job notifications, exam results, admit cards, answer keys, admissions and scholarships into a clear article-first experience.</p>
             <p>We do not conduct examinations or recruitment. Always confirm every deadline, fee, eligibility rule and result on the official authority website before taking action.</p>
           </section>
         </div>

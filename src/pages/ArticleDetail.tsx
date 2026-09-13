@@ -1,15 +1,13 @@
 import { useParams, Link, Navigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, ArrowUp, BellRing, Bookmark, BriefcaseBusiness, Calendar, CheckCircle2, Clock, Eye, FileCheck2, Link2, List, Pause, Play, Send, Share2, ShieldCheck, Tag } from "lucide-react";
+import { ArrowRight, ArrowUp, BellRing, Bookmark, Calendar, Clock, Eye, Link2, List, Pause, Play, Send, Share2, ShieldCheck, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { SarkariHeader } from "@/components/sarkari/SarkariHeader";
 import { SarkariFooter } from "@/components/sarkari/SarkariFooter";
-import { SarkariCarousel } from "@/components/sarkari/SarkariCarousel";
-import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { LeadCaptureForm } from "@/components/LeadCaptureForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DeferUntilVisible } from "@/components/DeferUntilVisible";
@@ -33,17 +31,6 @@ const GoogleAd = lazyRetry(() => import("@/components/ads/GoogleAd").then(m => (
 const FAQSection = lazyRetry(() => import("@/components/FAQSection").then(m => ({ default: m.FAQSection })), "FAQSection");
 
 const SAVED_ARTICLES_KEY = "sarkari_saved_articles_v1";
-
-const NEWS_CATEGORIES = [
-  { label: "All News", value: "" },
-  { label: "Latest Jobs", value: "Latest Jobs" },
-  { label: "Results", value: "Results" },
-  { label: "Admit Card", value: "Admit Card" },
-  { label: "Answer Key", value: "Answer Key" },
-  { label: "Admissions", value: "Admissions" },
-  { label: "Syllabus", value: "Syllabus" },
-  { label: "Scholarships", value: "Scholarships" },
-];
 
 function slugifyHeading(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9\s-]/g, "").trim().replace(/\s+/g, "-").slice(0, 80);
@@ -75,6 +62,7 @@ export default function ArticleDetail() {
         readTime: `${mins} min read`,
         author: dbArticle.author || "Sarkari DekhoCampus Desk",
         publishedAt: new Date(dbArticle.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+        updatedAt: new Date(dbArticle.updated_at || dbArticle.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
         views: dbArticle.views ?? 0,
         tags: dbArticle.tags || [],
       };
@@ -228,64 +216,68 @@ export default function ArticleDetail() {
     return contentSegments.filter((s) => s.type === "html").map((s: any) => s.value).join("");
   }, [contentSegments, article?.content]);
 
-  const eligibilityTarget = toc.find((item) => /eligib|qualification|age limit/i.test(item.text))?.id || "article-content";
-  const datesTarget = toc.find((item) => /date|schedule|deadline|important/i.test(item.text))?.id || "article-content";
-  const applicationTarget = toc.find((item) => /apply|application|download|check/i.test(item.text))?.id || "article-content";
-
   if (needsRedirect) return <Navigate to={`/news/${cleanSlug}`} replace />;
 
   if (!article) {
     if (articleLoadState === "loading") {
       return (
         <div className="sarkari-site min-h-screen bg-background">
+          <a className="sarkari-skip-link" href="#content">Skip to main content</a>
           <SarkariHeader />
-          <div className="w-full h-[220px] sm:h-[340px] lg:h-[420px] bg-muted animate-pulse" />
-          <div className="container max-w-6xl mx-auto px-4 sm:px-6 mt-6 grid lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-8 space-y-4">
-              <Skeleton className="h-4 w-40" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-3/4" />
-              <div className="flex items-center gap-3 pt-4 pb-4 border-b border-border">
-                <Skeleton className="w-11 h-11 rounded-full" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-3 w-32" />
-                  <Skeleton className="h-3 w-48" />
+          <main className="sarkari-detail-main" id="content">
+            <div className="sarkari-detail-shell">
+              <article className="sarkari-job-article space-y-4" aria-label="Loading job update">
+                <header className="sarkari-job-header space-y-3">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-3/4" />
+                  <div className="flex flex-wrap gap-3 border-l-4 border-primary bg-muted p-3">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-36" />
+                  </div>
+                </header>
+                <div className="sarkari-job-content space-y-4">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-5/6" />
+                  <Skeleton className="h-8 w-64 mt-8" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-4/6" />
                 </div>
-              </div>
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-5/6" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-4/6" />
+              </article>
             </div>
-            <div className="lg:col-span-4 hidden lg:block">
-              <Skeleton className="h-80 w-full rounded-2xl" />
-            </div>
-          </div>
+          </main>
+          <SarkariFooter />
         </div>
       );
     }
     if (articleLoadState === "unavailable") {
       return (
         <div className="sarkari-site min-h-screen bg-background">
+          <a className="sarkari-skip-link" href="#content">Skip to main content</a>
           <SarkariHeader />
-          <div className="container py-20 text-center" role="alert">
-            <h1 className="mb-2 text-2xl font-bold text-foreground">This update is temporarily unavailable</h1>
-            <p className="mb-6 text-muted-foreground">We could not reach the update service. Please retry in a moment.</p>
-            <Button className="min-h-11 rounded-xl" onClick={() => void refetchArticle()}>Retry</Button>
-          </div>
+          <main className="sarkari-detail-main" id="content">
+            <div className="sarkari-detail-shell text-center" role="alert">
+              <h1 className="mb-2 text-2xl font-bold text-foreground">This update is temporarily unavailable</h1>
+              <p className="mb-6 text-muted-foreground">We could not reach the update service. Please retry in a moment.</p>
+              <Button className="min-h-11 rounded-md" onClick={() => void refetchArticle()}>Retry</Button>
+            </div>
+          </main>
           <SarkariFooter />
         </div>
       );
     }
     return (
       <div className="sarkari-site min-h-screen bg-background">
+        <a className="sarkari-skip-link" href="#content">Skip to main content</a>
         <SarkariHeader />
-        <div className="container py-20 text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Article Not Found</h1>
-          <p className="text-muted-foreground mb-6">The article you're looking for doesn't exist.</p>
-          <Link to="/"><Button className="rounded-xl">Browse News</Button></Link>
-        </div>
+        <main className="sarkari-detail-main" id="content">
+          <div className="sarkari-detail-shell text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-2">Article Not Found</h1>
+            <p className="text-muted-foreground mb-6">The article you're looking for doesn't exist.</p>
+            <Link className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground" to="/">Browse News</Link>
+          </div>
+        </main>
         <SarkariFooter />
       </div>
     );
@@ -349,6 +341,7 @@ export default function ArticleDetail() {
 
   return (
     <div className="sarkari-site min-h-screen bg-background">
+      <a className="sarkari-skip-link" href="#content">Skip to main content</a>
       <Sonner />
       {/* Reading progress bar */}
       <div className="fixed top-0 left-0 right-0 h-1 z-[60] bg-transparent">
@@ -357,61 +350,32 @@ export default function ArticleDetail() {
 
       <SarkariHeader />
 
-      {/* News category nav strip */}
-      <div className="bg-card border-b border-border">
-        <div className="container max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="flex gap-2 overflow-x-auto py-3 scrollbar-hide">
-            {NEWS_CATEGORIES.map((c) => (
-              <Link key={c.label} to={c.value ? `/?category=${encodeURIComponent(c.value)}` : "/"}
-                className={`shrink-0 min-h-11 inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-semibold border transition ${
-                  (article?.category || "").toLowerCase().includes(c.value.toLowerCase()) && c.value
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-background text-muted-foreground border-border hover:border-primary/40 hover:text-primary"
-                }`}>
-                {c.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </div>
-
       <main className="sarkari-detail-main" id="content">
         <div className="sarkari-detail-shell">
-          <PageBreadcrumb items={[{ label: "Home", href: "/" }, { label: article.category, href: `/?category=${encodeURIComponent(article.category)}` }, { label: article.title }]} />
-
-          <div className="sarkari-detail-layout">
-            <article className="sarkari-detail-article">
-              <header className="sarkari-detail-hero">
-                <div className="sarkari-detail-kickers">
-                  <Link to={`/?category=${encodeURIComponent(article.category)}`}>{article.category}</Link>
-                  <span><ShieldCheck aria-hidden="true" /> Verify on the official portal</span>
-                </div>
+          <div className="sarkari-detail-layout sarkari-job-layout">
+            <article className="sarkari-detail-article sarkari-job-article">
+              <header className="sarkari-detail-hero sarkari-job-header">
                 <h1>{article.title}</h1>
-                {article.excerpt && <p className="sarkari-detail-excerpt">{article.excerpt}</p>}
-                <div className="sarkari-detail-meta">
-                  <span className="sarkari-detail-author"><i>{(article.author || "SD").split(/\s+/).map((word) => word[0]).join("").slice(0, 2).toUpperCase()}</i><strong>{article.author}</strong></span>
-                  <span><Calendar aria-hidden="true" /> {article.publishedAt}</span>
-                  <span><Clock aria-hidden="true" /> {article.readTime}</span>
-                  {article.views > 0 && <span><Eye aria-hidden="true" /> {article.views >= 1000 ? `${(article.views / 1000).toFixed(1)}K` : article.views}</span>}
+                <div className="sarkari-detail-meta sarkari-job-meta" aria-label="Article information">
+                  <span><Calendar aria-hidden="true" /><strong className="sarkari-job-meta-label">Last Updated:</strong> <time dateTime={dbArticle?.updated_at || dbArticle?.created_at}>{article.updatedAt}</time></span>
+                  <span><Tag aria-hidden="true" /><strong className="sarkari-job-meta-label">Category:</strong> <Link to={`/?category=${encodeURIComponent(article.category)}`}>{article.category}</Link></span>
+                  <span><Clock aria-hidden="true" /><strong className="sarkari-job-meta-label">Read Time:</strong> {article.readTime}</span>
+                  <span><strong className="sarkari-job-meta-label">Published By:</strong> {article.author}</span>
+                  {article.views > 0 && <span><Eye aria-hidden="true" /><strong className="sarkari-job-meta-label">Views:</strong> {article.views >= 1000 ? `${(article.views / 1000).toFixed(1)}K` : article.views}</span>}
+                </div>
+                {article.excerpt && <p className="sarkari-detail-excerpt sarkari-job-excerpt">{article.excerpt}</p>}
+                <div className="sarkari-job-actions" role="group" aria-label="Article actions">
+                  <Button variant="outline" size="sm" className="sarkari-job-action" onClick={handleSave}><Bookmark className={saved ? "fill-current" : ""} /> {saved ? "Saved" : "Save"}</Button>
+                  <Button variant="outline" size="sm" className="sarkari-job-action" onClick={toggleListen}>{isListening ? <Pause /> : <Play />} {isListening ? "Pause" : "Listen"}</Button>
+                  <Button variant="outline" size="sm" className="sarkari-job-action" onClick={handleShare}><Share2 /> Share</Button>
                 </div>
               </header>
 
-              <section className="sarkari-next-step" aria-labelledby="next-step-title">
-                <div><span>Quick actions</span><h2 id="next-step-title">What do you want to check?</h2></div>
-                <div className="sarkari-next-step-grid">
-                  <button type="button" onClick={() => jumpTo(applicationTarget)}><FileCheck2 /><span><strong>Read notification</strong><small>Application and next steps</small></span><ArrowRight /></button>
-                  <button type="button" onClick={() => jumpTo(datesTarget)}><Calendar /><span><strong>Important dates</strong><small>Schedule and deadlines</small></span><ArrowRight /></button>
-                  <button type="button" onClick={() => jumpTo(eligibilityTarget)}><CheckCircle2 /><span><strong>Check eligibility</strong><small>Age and qualification</small></span><ArrowRight /></button>
-                  <button type="button" onClick={handleSave}><Bookmark className={saved ? "fill-current" : ""} /><span><strong>{saved ? "Saved" : "Save this update"}</strong><small>Keep it for later</small></span><ArrowRight /></button>
-                </div>
-              </section>
-
               {article.image && !article.image.includes("placeholder") && (
-                <figure className="sarkari-detail-image"><img src={article.image} alt={article.title} width="1200" height="675" fetchPriority="high" decoding="async" /></figure>
+                <figure className="sarkari-detail-image sarkari-job-image"><img src={article.image} alt={article.title} width="1200" height="675" fetchPriority="high" decoding="async" /></figure>
               )}
 
-              <motion.section id="article-content" initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduceMotion ? 0 : 0.24 }} className="sarkari-content-card">
-                <div className="sarkari-content-heading"><span>Complete update</span><h2>Details, eligibility and next steps</h2></div>
+              <motion.section id="article-content" initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduceMotion ? 0 : 0.24 }} className="sarkari-content-card sarkari-job-content">
                 {article.content?.trim().startsWith("<") ? (
                   contentSegments ? (
                     <>{contentSegments.map((segment, index) => segment.type === "html" ? <RichText key={index} html={segment.value} className="article-prose article-prose--news max-w-none" /> : <DocumentViewer key={index} title={segment.title} images={segment.images} />)}</>
@@ -421,7 +385,7 @@ export default function ArticleDetail() {
                     <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
                       h2: ({ children, ...props }) => <h2 id={slugifyHeading(String(children))} {...props}>{children}</h2>,
                       h3: ({ children, ...props }) => <h3 id={slugifyHeading(String(children))} {...props}>{children}</h3>,
-                      table: ({ children, ...props }) => <div className="table-wrap"><table {...props}>{children}</table></div>,
+                      table: ({ children, ...props }) => <div className="table-wrap" role="region" aria-label="Scrollable article table" tabIndex={0}><table {...props}>{children}</table></div>,
                     }}>{article.content}</ReactMarkdown>
                   </div>
                 )}
@@ -435,21 +399,6 @@ export default function ArticleDetail() {
               </details>
 
               <DeferUntilVisible minHeight={120}><div className="mt-8"><DynamicAdBanner variant="horizontal" position="mid-page" page="articles" itemSlug={cleanSlug} /></div></DeferUntilVisible>
-              {recommendations.length > 0 && (
-                <section className="sarkari-related" aria-labelledby="related-title">
-                  <div className="sarkari-related-heading"><div><span>Continue exploring</span><h2 id="related-title">More {article.category.toLowerCase()} updates</h2><p>Prioritised using the same category and matching topics.</p></div><Link to={`/?category=${encodeURIComponent(article.category)}`}>View all <ArrowRight /></Link></div>
-                  <SarkariCarousel ariaLabel={`More ${article.category} updates`} className="sarkari-related-carousel">
-                    {recommendations.map((item) => (
-                      <Link className="sarkari-related-card" key={item.slug} to={`/news/${item.slug}`}>
-                        <div className="sarkari-related-icon">{item.image && !item.image.includes("placeholder") ? <img src={item.image} alt="" loading="lazy" decoding="async" /> : <BriefcaseBusiness />}</div>
-                        <div><span>{item.category}</span><h3>{item.title}</h3><p>{item.excerpt}</p><small>{item.readTime}</small></div>
-                        <ArrowRight />
-                      </Link>
-                    ))}
-                  </SarkariCarousel>
-                </section>
-              )}
-
               <DeferUntilVisible minHeight={300}>
                 <div className="sarkari-detail-faq">
                   <FAQSection page={SARKARI_FAQ_PAGE} itemSlug={cleanSlug} title="Frequently Asked Questions" fallback={[
@@ -460,20 +409,23 @@ export default function ArticleDetail() {
                   ]} />
                 </div>
               </DeferUntilVisible>
+              {recommendations.length > 0 && (
+                <section className="sarkari-related sarkari-job-related" aria-labelledby="related-title">
+                  <div className="sarkari-related-heading sarkari-job-related-heading"><div><span>Continue exploring</span><h2 id="related-title">More {article.category.toLowerCase()} updates</h2></div><Link to={`/?category=${encodeURIComponent(article.category)}`}>View all <ArrowRight /></Link></div>
+                  <ol className="sarkari-related-list sarkari-job-related-list" aria-label={`More ${article.category} updates`}>
+                    {recommendations.map((item, index) => (
+                      <li key={item.slug}>
+                        <Link className="sarkari-related-card sarkari-job-related-item" to={`/news/${item.slug}`}>
+                          <span className="sarkari-job-related-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                          <div><span>{item.category}</span><h3>{item.title}</h3><small>{item.publishedAt}</small></div>
+                          <ArrowRight aria-hidden="true" />
+                        </Link>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              )}
             </article>
-
-            <aside className="sarkari-detail-sidebar">
-              <div className="sarkari-detail-sidebar-sticky">
-                {toc.length > 0 && (
-                  <section className="sarkari-toc-card">
-                    <span>On this page</span><h2>Jump to a section</h2>
-                    <ol>{toc.slice(0, 8).map((heading, index) => <li key={heading.id}><button type="button" onClick={() => jumpTo(heading.id)}><i>{String(index + 1).padStart(2, "0")}</i><span>{heading.text}</span></button></li>)}</ol>
-                  </section>
-                )}
-                <section className="sarkari-side-reminder"><ShieldCheck /><div><h2>Independent information portal</h2><p>We do not conduct recruitment. Use the official authority website for the final notification and payment.</p></div></section>
-                <section className="sarkari-side-tools"><h2>Keep or share this update</h2><div><Button variant="outline" onClick={copyLink}><Link2 /> Copy link</Button><Button variant="outline" onClick={handleSave}><Bookmark className={saved ? "fill-current" : ""} /> {saved ? "Saved" : "Save"}</Button><Button variant="outline" onClick={toggleListen}>{isListening ? <Pause /> : <Play />} {isListening ? "Pause" : "Listen"}</Button><Button variant="outline" onClick={() => shareTo("whatsapp")}><Send /> WhatsApp</Button></div></section>
-              </div>
-            </aside>
           </div>
         </div>
       </main>

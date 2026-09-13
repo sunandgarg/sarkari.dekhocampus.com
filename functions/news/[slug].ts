@@ -18,6 +18,7 @@ const DEFAULT_API_URL = "https://aws-origin.dekhocampus.com";
 const BRAND_IMAGE = `${SITE_URL}/icon-512.png`;
 const ARTICLE_BODY_CHAR_LIMIT = 12_000;
 const MAX_UPSTREAM_ARTICLE_BYTES = 2_000_000;
+const NOINDEX_HEADER = "noindex, nofollow, noarchive";
 
 type Env = {
   API_URL?: string;
@@ -196,6 +197,8 @@ export async function shellVersion(template: string) {
 
 function cacheHitResponse(cached: Response, headOnly: boolean) {
   const headers = htmlHeaders(cached.headers);
+  if (cached.status === 200) headers.delete("X-Robots-Tag");
+  else if (cached.status === 404) headers.set("X-Robots-Tag", NOINDEX_HEADER);
   headers.set("Cache-Control", `public, max-age=0, s-maxage=${cached.status === 404 ? 30 : 60}`);
   headers.set("X-Sarkari-Edge-Cache", "HIT");
   return new Response(headOnly ? null : cached.body, {
@@ -280,7 +283,7 @@ async function notFound(context: PagesContext, headOnly: boolean) {
   }
   const headers = htmlHeaders(page.headers);
   headers.set("Cache-Control", "public, max-age=0, s-maxage=60, must-revalidate");
-  headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+  headers.set("X-Robots-Tag", NOINDEX_HEADER);
   return new Response(headOnly ? null : body, { status: 404, headers });
 }
 
@@ -288,7 +291,7 @@ function unavailable(headOnly: boolean) {
   const headers = htmlHeaders();
   headers.set("Cache-Control", "no-store");
   headers.set("Retry-After", "2");
-  headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+  headers.set("X-Robots-Tag", NOINDEX_HEADER);
   return new Response(
     headOnly ? null : "<!doctype html><title>Temporarily unavailable | Sarkari DekhoCampus</title><h1>Temporarily unavailable</h1><p>Please try again shortly.</p>",
     { status: 503, headers },
@@ -443,6 +446,9 @@ export async function onRequest(context: PagesContext) {
     return unavailable(headOnly);
   }
   const headers = htmlHeaders(asset.headers);
+  // The compact shell asset is intentionally non-indexable. A validated,
+  // published article response must never inherit that asset-level policy.
+  headers.delete("X-Robots-Tag");
   headers.set("Cache-Control", "public, max-age=0, s-maxage=60");
   headers.set("X-Sarkari-Edge-Cache", cacheBypassed ? "BYPASS" : "MISS");
   headers.set("X-Content-Type-Options", "nosniff");

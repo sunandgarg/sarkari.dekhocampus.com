@@ -52,6 +52,21 @@ const assets = (response = new Response(template, { status: 200, headers: { "Con
   fetch: vi.fn().mockResolvedValue(response),
 });
 
+const noindexAssets = () => assets(new Response(template, {
+  status: 200,
+  headers: {
+    "Content-Type": "text/html",
+    "X-Robots-Tag": "noindex, nofollow, noarchive",
+  },
+}));
+
+const successfulRobotsCases = [
+  ["GET", "MISS"],
+  ["HEAD", "MISS"],
+  ["GET", "HIT"],
+  ["HEAD", "HIT"],
+] as const;
+
 describe("Sarkari article Pages Function", () => {
   it("normalizes only canonical public article slugs", () => {
     expect(normalizeArticleSlug("Railway%20Clerk%202026")).toBe("railway-clerk-2026");
@@ -280,6 +295,57 @@ describe("Sarkari article Pages Function", () => {
     fetchSpy.mockRestore();
   });
 
+  it.each(successfulRobotsCases)("clears inherited shell noindex for a successful %s cache %s response", async (method, cacheState) => {
+    const isHit = cacheState === "HIT";
+    const cached = isHit
+      ? new Response("cached article", { status: 200, headers: { "Content-Type": "text/html", "X-Robots-Tag": "noindex" } })
+      : undefined;
+    const cache = {
+      match: vi.fn().mockResolvedValue(cached),
+      put: vi.fn().mockResolvedValue(undefined),
+    };
+    const previousCaches = (globalThis as typeof globalThis & { caches?: unknown }).caches;
+    Object.defineProperty(globalThis, "caches", { configurable: true, value: { default: cache } });
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    if (!isHit) {
+      fetchSpy.mockResolvedValue(new Response(JSON.stringify([article]), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }));
+    }
+    const pending: Promise<unknown>[] = [];
+
+    try {
+      const response = await onRequest({
+        request: new Request("https://sarkari.dekhocampus.com/news/railway-clerk-2026", { method }),
+        env: { API_URL: "https://api.example.com", ASSETS: noindexAssets() },
+        params: { slug: "railway-clerk-2026" },
+        waitUntil: (promise) => pending.push(promise),
+      });
+      await Promise.all(pending);
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-robots-tag")).toBeNull();
+      expect(response.headers.get("x-sarkari-edge-cache")).toBe(cacheState);
+      if (method === "HEAD") expect(await response.text()).toBe("");
+      else if (isHit) expect(await response.text()).toBe("cached article");
+      else expect(await response.text()).toContain(`id="${SARKARI_ARTICLE_BOOTSTRAP_ID}"`);
+
+      if (isHit) {
+        expect(fetchSpy).not.toHaveBeenCalled();
+        expect(cache.put).not.toHaveBeenCalled();
+      } else {
+        expect(fetchSpy).toHaveBeenCalledOnce();
+        expect(cache.put).toHaveBeenCalledOnce();
+        const storedResponse = cache.put.mock.calls[0][1] as Response;
+        expect(storedResponse.headers.get("x-robots-tag")).toBeNull();
+      }
+    } finally {
+      fetchSpy.mockRestore();
+      Object.defineProperty(globalThis, "caches", { configurable: true, value: previousCaches });
+    }
+  });
+
   it("uses the normalized Cloudflare cache key and serves a hit without querying AWS", async () => {
     const cached = new Response("cached article", { status: 200, headers: { "X-Sarkari-Edge-Cache": "HIT" } });
     const cache = { match: vi.fn().mockResolvedValue(cached), put: vi.fn() };
@@ -361,8 +427,10 @@ describe("Sarkari article Pages Function", () => {
     const hit = await onRequest({ ...context, waitUntil: vi.fn() });
     expect(miss.status).toBe(404);
     expect(miss.headers.get("x-sarkari-edge-cache")).toBe("MISS");
+    expect(miss.headers.get("x-robots-tag")).toContain("noindex");
     expect(hit.status).toBe(404);
     expect(hit.headers.get("x-sarkari-edge-cache")).toBe("HIT");
+    expect(hit.headers.get("x-robots-tag")).toContain("noindex");
     expect(fetchSpy).toHaveBeenCalledOnce();
     fetchSpy.mockRestore();
     Object.defineProperty(globalThis, "caches", { configurable: true, value: previousCaches });
