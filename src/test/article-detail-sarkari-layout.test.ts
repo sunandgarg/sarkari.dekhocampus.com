@@ -5,6 +5,7 @@ import { resolve } from "path";
 describe("Sarkari article detail layout (static source assertions)", () => {
   const articleSrc = readFileSync(resolve(process.cwd(), "src/pages/ArticleDetail.tsx"), "utf8");
   const articleHookSrc = readFileSync(resolve(process.cwd(), "src/hooks/useArticlesData.ts"), "utf8");
+  const stylesSrc = readFileSync(resolve(process.cwd(), "src/index.css"), "utf8");
 
   it("renders a flat single-column job page without the former card grid or desktop sidebar", () => {
     expect(articleSrc).toMatch(/sarkari-detail-layout sarkari-job-layout/);
@@ -58,6 +59,14 @@ describe("Sarkari article detail layout (static source assertions)", () => {
     expect(articleSrc).toMatch(/onClick=\{handleShare\}/);
     expect(articleSrc).toMatch(/<Sheet open=\{tocSheetOpen\}/);
     expect(articleSrc).not.toMatch(/useAuth|\/auth\?redirect/);
+  });
+
+  it("uses semantic detail highlights without adding layout motion", () => {
+    expect(stylesSrc).toMatch(/\.sarkari-job-meta \{[\s\S]*linear-gradient/);
+    expect(stylesSrc).toMatch(/\.sarkari-job-content \.article-prose--news thead \{ background: linear-gradient/);
+    expect(stylesSrc).toMatch(/\.sarkari-official-reminder \{[\s\S]*border-left: 4px solid var\(--sarkari-success-ink\)/);
+    expect(stylesSrc).toMatch(/\.sarkari-job-action \{[\s\S]*--sarkari-motion-fast/);
+    expect(stylesSrc).not.toMatch(/\.sarkari-job-content[^}]*animation:/);
   });
 
   it("never falls back to hardcoded demo notices", () => {

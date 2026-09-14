@@ -2433,9 +2433,10 @@
   .sarkari-job-related-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sarkari-header,
   .sarkari-header-inner { min-height: 45px; }
-  .sarkari-header-inner { width: calc(100% - 16px); }
-  .sarkari-brand { min-height: 44px; }
-  .sarkari-brand-picture { width: 32px; aspect-ratio: 64 / 62; }
+  .sarkari-header-inner { width: calc(100% - 16px); gap: 8px; }
+  .sarkari-brand { min-width: 0; min-height: 44px; gap: 8px; }
+  .sarkari-brand-picture { width: min(142px, 37vw); aspect-ratio: 256 / 70; }
+  .sarkari-nav-bar { flex: 0 0 auto; }
   .sarkari-portal-label { padding-left: 7px; }
   .sarkari-portal-label strong { font-size: 12px; }
   .sarkari-portal-label small { display: none; }
@@ -2540,4 +2541,220 @@
   .sarkari-update-card,
   .sarkari-directory-grid > a,
   .sarkari-browse-card { transition: none; }
+}
+
+/* Calm attention system: short feedback, semantic brand highlights and no
+   layout or type changes. */
+.sarkari-site {
+  --sarkari-attention-soft: hsl(var(--accent) / .10);
+  --sarkari-attention-ink: color-mix(in srgb, hsl(var(--accent)) 64%, hsl(var(--foreground)));
+  --sarkari-success-soft: hsl(var(--success) / .08);
+  --sarkari-motion-fast: 140ms;
+  --sarkari-motion-ui: 180ms;
+  --sarkari-motion-enter: 340ms;
+  --sarkari-ease-out: cubic-bezier(.22, 1, .36, 1);
+}
+
+.sarkari-header::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 8%, hsl(var(--primary) / .7) 42%, hsl(var(--accent) / .7) 58%, transparent 92%);
+  content: "";
+  opacity: .4;
+  pointer-events: none;
+}
+.sarkari-brand-picture,
+.sarkari-nav-bar nav a,
+.sarkari-search-button,
+.sarkari-menu-button { transition: color var(--sarkari-motion-fast) ease, background-color var(--sarkari-motion-fast) ease, transform var(--sarkari-motion-fast) var(--sarkari-ease-out); }
+
+.sarkari-hero {
+  background:
+    radial-gradient(circle at 12% 18%, hsl(var(--primary) / .09), transparent 32%),
+    radial-gradient(circle at 88% 12%, hsl(var(--accent) / .10), transparent 30%),
+    linear-gradient(180deg, #fff 0%, #f8faff 100%);
+}
+.sarkari-eyebrow {
+  border-color: hsl(var(--accent) / .28);
+  background: linear-gradient(90deg, hsl(var(--primary) / .08), hsl(var(--accent) / .12));
+  color: var(--sarkari-attention-ink);
+}
+.sarkari-hero h1 em { position: relative; display: inline-block; }
+.sarkari-hero h1 em::after {
+  position: absolute;
+  right: 4%;
+  bottom: -.08em;
+  left: 4%;
+  height: .08em;
+  min-height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, hsl(var(--primary) / .42), hsl(var(--accent) / .58));
+  content: "";
+}
+.sarkari-search {
+  transition: border-color var(--sarkari-motion-ui) ease, box-shadow var(--sarkari-motion-ui) ease, transform var(--sarkari-motion-ui) var(--sarkari-ease-out);
+}
+.sarkari-search:focus-within {
+  border-color: hsl(var(--primary) / .62);
+  box-shadow: 0 0 0 3px hsl(var(--primary) / .13), 0 10px 26px hsl(var(--foreground) / .09);
+}
+
+.sarkari-section-heading h2,
+.sarkari-update-row-heading h2,
+.sarkari-job-related-heading h2 { position: relative; }
+.sarkari-section-heading h2::after,
+.sarkari-update-row-heading h2::after,
+.sarkari-job-related-heading h2::after {
+  position: absolute;
+  bottom: -5px;
+  left: 8px;
+  width: 42px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--sarkari-primary), var(--sarkari-accent));
+  content: "";
+}
+
+.sarkari-trending-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid hsl(var(--primary) / .12);
+  background: linear-gradient(135deg, hsl(var(--primary) / .09), #fff 64%, hsl(var(--accent) / .07));
+  transition: transform var(--sarkari-motion-ui) var(--sarkari-ease-out), border-color var(--sarkari-motion-ui) ease, background-color var(--sarkari-motion-ui) ease, box-shadow var(--sarkari-motion-ui) ease;
+}
+.sarkari-trending-card::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--sarkari-primary), var(--sarkari-accent));
+  content: "";
+  opacity: .82;
+}
+.sarkari-update-card {
+  background: linear-gradient(90deg, hsl(var(--primary) / .045), #fff 34%);
+  transition: transform var(--sarkari-motion-ui) var(--sarkari-ease-out), border-color var(--sarkari-motion-ui) ease, background-color var(--sarkari-motion-ui) ease, box-shadow var(--sarkari-motion-ui) ease;
+}
+.sarkari-dense-new-label {
+  min-height: 20px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  border: 1px solid hsl(var(--accent) / .34);
+  border-radius: 999px;
+  background: var(--sarkari-attention-soft);
+  color: var(--sarkari-attention-ink);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+}
+.sarkari-browse-card,
+.sarkari-browse-card .sarkari-item-icon,
+.sarkari-browse-card .sarkari-state-code,
+.sarkari-browse-card > svg {
+  transition: transform var(--sarkari-motion-ui) var(--sarkari-ease-out), border-color var(--sarkari-motion-ui) ease, background-color var(--sarkari-motion-ui) ease, color var(--sarkari-motion-ui) ease, box-shadow var(--sarkari-motion-ui) ease;
+}
+
+.sarkari-job-meta {
+  background: linear-gradient(90deg, hsl(var(--primary) / .08), #f8fafc 58%, hsl(var(--accent) / .07));
+}
+.sarkari-job-action {
+  transition: transform var(--sarkari-motion-fast) var(--sarkari-ease-out), border-color var(--sarkari-motion-fast) ease, background-color var(--sarkari-motion-fast) ease, color var(--sarkari-motion-fast) ease, box-shadow var(--sarkari-motion-fast) ease;
+}
+.sarkari-job-action .fill-current { color: var(--sarkari-primary); }
+.sarkari-job-content .article-prose--news thead { background: linear-gradient(90deg, hsl(var(--primary) / .16), hsl(var(--accent) / .14)); }
+.sarkari-job-content .article-prose--news tbody tr { transition: background-color var(--sarkari-motion-fast) ease; }
+.sarkari-job-content .article-prose--news td a[target="_blank"],
+.sarkari-job-content .article-prose--news th a[target="_blank"] {
+  border-bottom: 1px solid hsl(var(--accent) / .55);
+  color: var(--sarkari-primary-dark);
+  text-decoration: none;
+}
+.sarkari-official-reminder {
+  border-left: 4px solid var(--sarkari-success-ink);
+  background: linear-gradient(90deg, var(--sarkari-success-soft), #fff);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sarkari-brand:hover .sarkari-brand-picture { transform: translateY(-1px); }
+  .sarkari-trending-card:hover {
+    transform: translateY(-2px);
+    border-color: hsl(var(--primary) / .28);
+    background: linear-gradient(135deg, hsl(var(--primary) / .13), #fff 64%, hsl(var(--accent) / .10));
+    box-shadow: 0 8px 22px hsl(var(--foreground) / .09);
+  }
+  .sarkari-update-card:hover {
+    transform: translateY(-1px);
+    background: linear-gradient(90deg, hsl(var(--primary) / .085), #fff 42%);
+  }
+  .sarkari-browse-card:hover {
+    transform: translateY(-1px);
+    background: linear-gradient(90deg, hsl(var(--primary) / .07), #fff 68%);
+  }
+  .sarkari-browse-card:hover .sarkari-item-icon,
+  .sarkari-browse-card:hover .sarkari-state-code { transform: translateY(-1px); }
+  .sarkari-browse-card:hover > svg,
+  .sarkari-section-heading > a:hover svg,
+  .sarkari-update-row-heading > a:hover svg,
+  .sarkari-job-related-heading > a:hover svg { transform: translateX(3px); color: var(--sarkari-accent-ink); }
+  .sarkari-job-action:hover {
+    transform: translateY(-1px);
+    border-color: var(--sarkari-primary-border);
+    background: var(--sarkari-primary-soft);
+    color: var(--sarkari-primary-dark);
+    box-shadow: 0 4px 12px hsl(var(--primary) / .10);
+  }
+  .sarkari-job-content .article-prose--news tbody tr:hover { background: hsl(var(--primary) / .055); }
+}
+
+.sarkari-trending-card:active,
+.sarkari-update-card:active,
+.sarkari-browse-card:active,
+.sarkari-job-action:active { transform: scale(.985); }
+
+@keyframes sarkari-soft-enter {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sarkari-eyebrow { animation: sarkari-soft-enter var(--sarkari-motion-enter) var(--sarkari-ease-out) both; }
+  .sarkari-search { animation: sarkari-soft-enter var(--sarkari-motion-enter) 80ms var(--sarkari-ease-out) both; }
+  .sarkari-trending-card { animation: sarkari-soft-enter var(--sarkari-motion-enter) var(--sarkari-ease-out) both; }
+  .sarkari-trending-card:nth-child(2) { animation-delay: 35ms; }
+  .sarkari-trending-card:nth-child(3) { animation-delay: 70ms; }
+  .sarkari-trending-card:nth-child(4) { animation-delay: 105ms; }
+  .sarkari-trending-card:nth-child(5) { animation-delay: 140ms; }
+  .sarkari-trending-card:nth-child(6) { animation-delay: 175ms; }
+  .sarkari-trending-card:nth-child(7) { animation-delay: 210ms; }
+  .sarkari-trending-card:nth-child(8) { animation-delay: 245ms; }
+  .sarkari-nav-bar nav.is-open { animation: sarkari-soft-enter var(--sarkari-motion-ui) var(--sarkari-ease-out) both; }
+}
+
+@media (max-width: 480px) {
+  .sarkari-section-heading h2::after,
+  .sarkari-update-row-heading h2::after { left: 0; }
+}
+
+@media (max-width: 340px) {
+  .sarkari-portal-label { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sarkari-eyebrow,
+  .sarkari-search,
+  .sarkari-trending-card,
+  .sarkari-update-card,
+  .sarkari-browse-card,
+  .sarkari-browse-card .sarkari-item-icon,
+  .sarkari-browse-card .sarkari-state-code,
+  .sarkari-browse-card > svg,
+  .sarkari-job-action,
+  .article-prose--news tbody tr,
+  .sarkari-nav-bar nav.is-open { animation: none !important; transition: none !important; transform: none !important; }
 }

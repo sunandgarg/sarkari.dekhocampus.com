@@ -51,7 +51,6 @@ export function SarkariHeader() {
         <div className="sarkari-header-inner">
           <Link to="/" className="sarkari-brand" aria-label="Sarkari DekhoCampus home" title="Sarkari DekhoCampus home">
             <picture className="sarkari-brand-picture" aria-hidden="true">
-              <source media="(max-width: 900px)" srcSet={SITE_CONFIG.compactLogoPath} />
               <img src={SITE_CONFIG.wordmarkPath} alt="" width="256" height="70" decoding="async" />
             </picture>
             <span className="sarkari-portal-label"><strong>Sarkari</strong><small>UPDATES &amp; ALERTS</small></span>
