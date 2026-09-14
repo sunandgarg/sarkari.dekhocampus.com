@@ -30,6 +30,9 @@ requireContract(prerender.includes('class="sarkari-hero"'), "real hero is missin
 requireContract(prerender.includes('<h1>Your shortcut to <em>government opportunities</em></h1>'), "real hero heading is missing");
 requireContract(prerender.includes('class="sarkari-search"'), "real search form is missing");
 requireContract(prerender.includes("Loading latest updates..."), "deterministic initial query state is missing");
+requireContract(prerender.includes('class="sarkari-home-initial-viewport"'), "initial viewport reserve is missing");
+requireContract(prerender.includes('class="sarkari-home-feed-region"'), "bounded async feed region is missing");
+requireContract(prerender.indexOf("sarkari-home-lower-content") > prerender.indexOf("sarkari-home-feed-region"), "lower content must follow the async feed reserve");
 requireContract(prerender.includes('class="sarkari-footer"'), "real footer is missing");
 requireContract(Number.isInteger(version.buildYear) && prerender.includes(`Copyright © <!-- -->${version.buildYear}<!-- -->`), "footer does not use the client build year");
 requireContract(!index.includes("sarkari-home-prerender-placeholder"), "placeholder leaked into the build");
@@ -58,7 +61,7 @@ const criticalRawBytes = Buffer.byteLength(criticalCss);
 const criticalGzipBytes = gzipSync(criticalCss, { level: 9 }).length;
 requireContract(criticalRawBytes >= 8_000 && criticalRawBytes <= 24 * 1024, `critical CSS raw size is ${criticalRawBytes} bytes`);
 requireContract(criticalGzipBytes >= 1_500 && criticalGzipBytes <= 6 * 1024, `critical CSS gzip size is ${criticalGzipBytes} bytes`);
-for (const selector of [":root", "body", ".sarkari-site", ".sarkari-site :focus-visible", ".sarkari-skip-link:focus", ".sarkari-header", ".sarkari-hero", ".sarkari-hero h1", ".sarkari-search", ".sarkari-loading"]) {
+for (const selector of [":root", "body", ".sarkari-site", ".sarkari-site :focus-visible", ".sarkari-skip-link:focus", ".sarkari-header", ".sarkari-hero", ".sarkari-hero h1", ".sarkari-home-initial-viewport", ".sarkari-home-feed-main", ".sarkari-home-feed-region", ".sarkari-search", ".sarkari-loading"]) {
   requireContract(criticalCss.includes(selector), `critical CSS is missing ${selector}`);
 }
 const deferredStylesheet = criticalRegion.match(/<link\b(?=[^>]*\brel=["']stylesheet["'])(?=[^>]*\bdata-sarkari-full-stylesheet\b)[^>]*>/i)?.[0] || "";

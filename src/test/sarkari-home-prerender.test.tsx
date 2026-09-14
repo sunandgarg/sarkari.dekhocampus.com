@@ -30,6 +30,12 @@ describe("Sarkari exact-home prerender", () => {
     expect(markup).toContain("<h1>Your shortcut to <em>government opportunities</em></h1>");
     expect(markup).toContain('class="sarkari-search"');
     expect(markup).toContain("Loading latest updates...");
+    expect(markup).toContain('class="sarkari-home-initial-viewport"');
+    expect(markup).toContain('class="sarkari-home-feed-region"');
+    expect(markup).toContain('sarkari-home-lower-content');
+    expect(markup.indexOf('sarkari-home-lower-content')).toBeGreaterThan(
+      markup.indexOf('sarkari-home-feed-region'),
+    );
     expect(markup).toContain('class="sarkari-footer"');
     expect(markup).not.toContain('data-testid="cookie-consent-bar"');
     expect(markup).not.toContain("adsbygoogle");

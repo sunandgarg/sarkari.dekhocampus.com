@@ -133,6 +133,21 @@ describe("Sarkari homepage layout (static source assertions)", () => {
     expect(denseStyles).toMatch(/@media \(max-width: 480px\)[\s\S]*\.sarkari-alert-cta \{[^}]*flex-direction: column;/);
   });
 
+  it("keeps async feed insertion from shifting initially visible lower content", () => {
+    expect(indexSrc).toContain('className="sarkari-home-initial-viewport"');
+    expect(indexSrc).toContain('className="sarkari-main sarkari-dense-home sarkari-home-feed-main"');
+    expect(indexSrc).toContain('className="sarkari-home-feed-region"');
+    expect(indexSrc).toContain('className="sarkari-main sarkari-dense-home sarkari-home-lower-content"');
+    expect(indexSrc.indexOf("sarkari-home-lower-content")).toBeGreaterThan(
+      indexSrc.indexOf("sarkari-home-feed-region"),
+    );
+    expect(denseStyles).toMatch(/--sarkari-header-block: 65px/);
+    expect(denseStyles).toMatch(/\.sarkari-home-initial-viewport \{[\s\S]*min-block-size: calc\(100svh - var\(--sarkari-header-block\) \+ 1px\);[\s\S]*display: flex;/);
+    expect(denseStyles).toMatch(/\.sarkari-home-feed-main \{[\s\S]*flex: 1;[\s\S]*padding-bottom: 0;/);
+    expect(denseStyles).toMatch(/\.sarkari-home-feed-region \{ flex: 1; \}/);
+    expect(denseStyles).toMatch(/@media \(max-width: 900px\)[\s\S]*--sarkari-header-block: 45px/);
+  });
+
   it("connects directory entries to search and article results", () => {
     expect(indexSrc).toMatch(/to={`\/\?q=\$\{encodeURIComponent\(item\)\}`}/);
     expect(indexSrc).toMatch(/to={`\/news\/\$\{article\.slug\}`}/);

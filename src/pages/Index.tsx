@@ -234,21 +234,23 @@ export default function Index() {
       <SarkariAdSlot placement="homepage" position="top" pageKey="homepage" className="sarkari-ad-placement sarkari-ad-placement--rectangle" />
 
       <main id="content">
-        <section className="sarkari-hero">
-          <div className="sarkari-hero-inner">
-            <span className="sarkari-eyebrow"><img src={SITE_CONFIG.compactLogoPath} alt="" width="128" height="123" aria-hidden="true" /> Fresh government updates</span>
-            <h1>Your shortcut to <em>government opportunities</em></h1>
-            <p>Find jobs, results, admit cards and answer keys, with important dates and official next steps up front.</p>
-            <form className="sarkari-search" role="search" aria-label="Search Sarkari updates" onSubmit={submitSearch}>
-              <label className="sr-only" htmlFor="sarkari-home-search">Search Sarkari updates</label>
-              <Search aria-hidden="true" />
-              <input id="sarkari-home-search" name="q" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search exam, department, post or notification" />
-              <button type="submit">Search</button>
-            </form>
-          </div>
-        </section>
+        <div className="sarkari-home-initial-viewport">
+          <section className="sarkari-hero">
+            <div className="sarkari-hero-inner">
+              <span className="sarkari-eyebrow"><img src={SITE_CONFIG.compactLogoPath} alt="" width="128" height="123" aria-hidden="true" /> Fresh government updates</span>
+              <h1>Your shortcut to <em>government opportunities</em></h1>
+              <p>Find jobs, results, admit cards and answer keys, with important dates and official next steps up front.</p>
+              <form className="sarkari-search" role="search" aria-label="Search Sarkari updates" onSubmit={submitSearch}>
+                <label className="sr-only" htmlFor="sarkari-home-search">Search Sarkari updates</label>
+                <Search aria-hidden="true" />
+                <input id="sarkari-home-search" name="q" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search exam, department, post or notification" />
+                <button type="submit">Search</button>
+              </form>
+            </div>
+          </section>
 
-        <div className="sarkari-main sarkari-dense-home">
+          <div className="sarkari-main sarkari-dense-home sarkari-home-feed-main">
+            <div className="sarkari-home-feed-region">
           {!hasFilters && headlineArticles.length > 0 && (
             <section className="sarkari-trending sarkari-dense-trending" aria-labelledby="trending-heading">
               <div className="sarkari-section-heading sarkari-dense-section-heading sarkari-trending-heading">
@@ -336,7 +338,11 @@ export default function Index() {
               )}
             </section>
           ) : <div className="sarkari-empty">No published updates are available yet.</div>}
+            </div>
+          </div>
+        </div>
 
+        <div className="sarkari-main sarkari-dense-home sarkari-home-lower-content">
           {!hasFilters && (
             <section className="sarkari-discovery sarkari-dense-discovery" aria-label="Browse government jobs">
               {directoryGroups.map(({ eyebrow, title, icon: Icon, items }, groupIndex) => (
