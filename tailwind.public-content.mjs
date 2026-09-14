@@ -25,6 +25,7 @@ export const publicContent = [
   "./src/components/detail/RichText.tsx",
   "./src/components/sarkari/SarkariFooter.tsx",
   "./src/components/sarkari/SarkariHeader.tsx",
+  "./src/components/sarkari/SarkariCarousel.tsx",
   "./src/components/sarkari/SarkariSearchDialog.tsx",
   "./src/components/ui/accordion.tsx",
   "./src/components/ui/badge.tsx",

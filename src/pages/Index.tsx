@@ -3,6 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { SEO } from "@/components/SEO";
+import { SarkariCarousel } from "@/components/sarkari/SarkariCarousel";
 import { SarkariFooter } from "@/components/sarkari/SarkariFooter";
 import { SarkariHeader } from "@/components/sarkari/SarkariHeader";
 import { SARKARI_ARCHIVE_PAGE_SIZE, usePublicArticleArchive, useSarkariHomepageArticles, type DbArticle } from "@/hooks/useArticlesData";
@@ -52,25 +53,31 @@ const directoryItemIcons: Record<string, LucideIcon> = {
   "State PSC": Building2,
 };
 
-const stateCodes: Record<string, string> = {
-  "All India": "IN",
-  "Uttar Pradesh": "UP",
-  Bihar: "BR",
-  Delhi: "DL",
-  Rajasthan: "RJ",
-  Maharashtra: "MH",
-  "Madhya Pradesh": "MP",
-  Haryana: "HR",
-  Punjab: "PB",
-  Gujarat: "GJ",
-  "West Bengal": "WB",
-  "Tamil Nadu": "TN",
-  Karnataka: "KA",
-  Telangana: "TS",
-  Odisha: "OD",
-  Assam: "AS",
-  Kerala: "KL",
-  Jharkhand: "JH",
+const directoryItemTones: Record<string, "sky" | "amber" | "coral" | "rose" | "violet" | "cyan" | "mint" | "blue"> = {
+  Apprentice: "sky",
+  Teacher: "rose",
+  Clerk: "amber",
+  Engineer: "sky",
+  Accountant: "mint",
+  Nurse: "rose",
+  Stenographer: "mint",
+  "Medical Officer": "violet",
+  "10th Pass": "sky",
+  "12th Pass": "amber",
+  ITI: "coral",
+  Diploma: "coral",
+  Graduate: "sky",
+  "Post Graduate": "cyan",
+  BCA: "mint",
+  MCA: "rose",
+  Bank: "sky",
+  Railway: "rose",
+  Defence: "amber",
+  Police: "mint",
+  SSC: "blue",
+  UPSC: "cyan",
+  "Post Office": "mint",
+  "State PSC": "blue",
 };
 
 type DirectoryGroup = {
@@ -83,19 +90,19 @@ type DirectoryGroup = {
 const directoryGroups: DirectoryGroup[] = [
   {
     eyebrow: "Find the right role",
-    title: "Government jobs by position",
+    title: "Govt Jobs by Positions",
     icon: UserRoundSearch,
     items: ["Apprentice", "Teacher", "Clerk", "Engineer", "Accountant", "Nurse", "Stenographer", "Medical Officer"],
   },
   {
     eyebrow: "Match your education",
-    title: "Government jobs by qualification",
+    title: "Govt Jobs by Qualification",
     icon: GraduationCap,
     items: ["10th Pass", "12th Pass", "ITI", "Diploma", "Graduate", "Post Graduate", "BCA", "MCA"],
   },
   {
     eyebrow: "Explore every sector",
-    title: "Government jobs by department",
+    title: "Govt Jobs by Department",
     icon: Building2,
     items: ["Bank", "Railway", "Defence", "Police", "SSC", "UPSC", "Post Office", "State PSC"],
   },
@@ -118,6 +125,7 @@ const toPortalArticle = (article: DbArticle): PortalArticle => ({
 });
 
 const TRENDING_ITEM_LIMIT = 8;
+const TRENDING_PAGE_SIZE = 3;
 const UPDATE_ITEM_LIMIT = Math.min(SARKARI_ARCHIVE_PAGE_SIZE, 8);
 const categorySectionTitles: Record<string, string> = {
   "Latest Jobs": `Latest Govt Jobs ${buildYear}`,
@@ -169,6 +177,13 @@ export default function Index() {
     () => (homeQuery.data?.latest || []).map(toPortalArticle),
     [homeQuery.data?.latest]
   );
+  const trendingPages = useMemo(() => {
+    const items = headlineArticles.slice(0, TRENDING_ITEM_LIMIT);
+    return Array.from(
+      { length: Math.ceil(items.length / TRENDING_PAGE_SIZE) },
+      (_, pageIndex) => items.slice(pageIndex * TRENDING_PAGE_SIZE, (pageIndex + 1) * TRENDING_PAGE_SIZE),
+    );
+  }, [headlineArticles]);
   const groups = useMemo(() => SARKARI_CATEGORIES.map((category) => ({
     category,
     items: (homeQuery.data?.byCategory[category] || []).map(toPortalArticle),
@@ -234,23 +249,34 @@ export default function Index() {
         <div className="sarkari-main sarkari-dense-home">
           {!hasFilters && headlineArticles.length > 0 && (
             <section className="sarkari-trending sarkari-dense-trending" aria-labelledby="trending-heading">
-              <div className="sarkari-section-heading sarkari-dense-section-heading">
+              <div className="sarkari-section-heading sarkari-dense-section-heading sarkari-trending-heading">
                 <div><span>Updated daily</span><h2 id="trending-heading">Trending Govt Jobs</h2></div>
                 <Link to="/?category=Latest%20Jobs">View More <ArrowRight aria-hidden="true" /></Link>
               </div>
-              <div className="sarkari-trending-grid sarkari-dense-trending-grid">
-                {headlineArticles.slice(0, TRENDING_ITEM_LIMIT).map((article) => (
-                  <Link className="sarkari-trending-card sarkari-dense-trending-card" key={article.slug} to={`/news/${article.slug}`}>
-                    <div className="sarkari-dense-card-label"><span>{article.category}</span>{article.isNew && <em>New</em>}</div>
-                    <h3>{article.title}</h3>
-                    <p>{article.description}</p>
-                    <footer>
-                      <span><CalendarDays aria-hidden="true" /> Published <time dateTime={article.createdAt}>{shortDate.format(new Date(article.createdAt))}</time></span>
-                      <ArrowRight aria-hidden="true" />
-                    </footer>
-                  </Link>
+              <SarkariCarousel ariaLabel="Trending government jobs" className="sarkari-trending-carousel">
+                {trendingPages.map((page, pageIndex) => (
+                  <ol className="sarkari-trending-page" start={pageIndex * TRENDING_PAGE_SIZE + 1} key={page[0]?.slug || pageIndex}>
+                    {page.map((article, articleIndex) => {
+                      const ordinal = pageIndex * TRENDING_PAGE_SIZE + articleIndex + 1;
+                      return (
+                        <li key={article.slug}>
+                          <Link className="sarkari-trending-card sarkari-dense-trending-card" to={`/news/${article.slug}`}>
+                            <span className="sarkari-trending-number" aria-hidden="true">{ordinal}</span>
+                            <div className="sarkari-trending-card-body">
+                              <h3>{article.title}</h3>
+                              <p>{article.description}</p>
+                              <footer>
+                                <span><CalendarDays aria-hidden="true" /> Published <time dateTime={article.createdAt}>{shortDate.format(new Date(article.createdAt))}</time></span>
+                                <ArrowRight aria-hidden="true" />
+                              </footer>
+                            </div>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ol>
                 ))}
-              </div>
+              </SarkariCarousel>
             </section>
           )}
 
@@ -312,10 +338,11 @@ export default function Index() {
                   <ul className="sarkari-browse-grid">
                     {items.map((item) => {
                       const ItemIcon = directoryItemIcons[item] || BriefcaseBusiness;
+                      const iconTone = directoryItemTones[item] || "blue";
                       return (
                         <li key={item}>
                           <Link className="sarkari-browse-card" to={`/?q=${encodeURIComponent(item)}`}>
-                            <span className="sarkari-directory-item-label"><i className="sarkari-item-icon"><ItemIcon aria-hidden="true" /></i><span>{item}</span></span>
+                            <span className="sarkari-directory-item-label"><i className={`sarkari-item-icon sarkari-item-icon--${iconTone}`}><ItemIcon aria-hidden="true" /></i><span>{item}</span></span>
                             <ChevronRight aria-hidden="true" />
                           </Link>
                         </li>
@@ -327,14 +354,14 @@ export default function Index() {
 
               <section className="sarkari-browse-section sarkari-states" aria-labelledby="sarkari-state-heading">
                 <div className="sarkari-section-heading sarkari-dense-section-heading">
-                  <div><span>Opportunities near you</span><h2 id="sarkari-state-heading">Government jobs by state</h2></div>
+                  <div><span>Opportunities near you</span><h2 id="sarkari-state-heading">Govt Jobs by States</h2></div>
                   <MapPin aria-hidden="true" />
                 </div>
                 <ul className="sarkari-browse-grid">
                   {states.map((state) => (
                     <li key={state}>
                       <Link className="sarkari-browse-card" to={`/?q=${encodeURIComponent(state)}`}>
-                        <span className="sarkari-directory-item-label"><i className="sarkari-state-code" aria-hidden="true">{stateCodes[state]}</i><span>{state}</span></span>
+                        <span className="sarkari-directory-item-label"><i className="sarkari-item-icon sarkari-item-icon--blue"><MapPin aria-hidden="true" /></i><span>{state}</span></span>
                         <ChevronRight aria-hidden="true" />
                       </Link>
                     </li>

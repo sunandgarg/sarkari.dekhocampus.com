@@ -6,8 +6,10 @@ describe("Sarkari homepage layout (static source assertions)", () => {
   const indexSrc = readFileSync(resolve(process.cwd(), "src/pages/Index.tsx"), "utf8");
   const headerSrc = readFileSync(resolve(process.cwd(), "src/components/sarkari/SarkariHeader.tsx"), "utf8");
   const footerSrc = readFileSync(resolve(process.cwd(), "src/components/sarkari/SarkariFooter.tsx"), "utf8");
+  const carouselSrc = readFileSync(resolve(process.cwd(), "src/components/sarkari/SarkariCarousel.tsx"), "utf8");
   const configSrc = readFileSync(resolve(process.cwd(), "src/lib/constant.ts"), "utf8");
   const stylesSrc = readFileSync(resolve(process.cwd(), "src/index.css"), "utf8");
+  const tailwindContentSrc = readFileSync(resolve(process.cwd(), "tailwind.public-content.mjs"), "utf8");
   const denseStyles = stylesSrc.slice(stylesSrc.indexOf("/* Dense public jobs portal presentation."));
 
   it("uses the official full wordmark in the header at every viewport", () => {
@@ -36,25 +38,35 @@ describe("Sarkari homepage layout (static source assertions)", () => {
   });
 
   it("supports the discovery paths users expect from a government-job portal", () => {
-    expect(indexSrc).toMatch(/Government jobs by position/);
-    expect(indexSrc).toMatch(/Government jobs by qualification/);
-    expect(indexSrc).toMatch(/Government jobs by department/);
-    expect(indexSrc).toMatch(/Government jobs by state/);
+    expect(indexSrc).toMatch(/Govt Jobs by Positions/);
+    expect(indexSrc).toMatch(/Govt Jobs by Qualification/);
+    expect(indexSrc).toMatch(/Govt Jobs by Department/);
+    expect(indexSrc).toMatch(/Govt Jobs by States/);
     expect(headerSrc).toMatch(/Walk-in/);
     expect(indexSrc).toMatch(/directoryItemIcons/);
-    expect(indexSrc).toMatch(/stateCodes/);
+    expect(indexSrc).toMatch(/directoryItemTones/);
+    expect(indexSrc).toMatch(/sarkari-item-icon--blue[^\n]*<MapPin/);
+    expect(indexSrc).not.toMatch(/stateCodes/);
   });
 
-  it("renders bounded compact grids without carousels or hidden directory entries", () => {
+  it("renders three-job carousel pages and bounded grids without hidden directory entries", () => {
     expect(indexSrc).toMatch(/SARKARI_ARCHIVE_PAGE_SIZE/);
     expect(indexSrc).toMatch(/TRENDING_ITEM_LIMIT = 8/);
+    expect(indexSrc).toMatch(/TRENDING_PAGE_SIZE = 3/);
     expect(indexSrc).toContain("hasFilters ? SARKARI_ARCHIVE_PAGE_SIZE : UPDATE_ITEM_LIMIT");
-    expect(indexSrc).toMatch(/className="sarkari-trending-grid sarkari-dense-trending-grid"/);
+    expect(indexSrc).toMatch(/<SarkariCarousel ariaLabel="Trending government jobs" className="sarkari-trending-carousel">/);
+    expect(indexSrc).toMatch(/className="sarkari-trending-page"/);
+    expect(indexSrc).toMatch(/className="sarkari-trending-number"/);
+    expect(denseStyles).toMatch(/\.sarkari-trending-page \{[\s\S]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/);
+    expect(denseStyles).toMatch(/@media \(max-width: 600px\)[\s\S]*\.sarkari-trending-page,[\s\S]*grid-template-columns: 1fr;/);
     expect(stylesSrc).toMatch(/\.sarkari-dense-card-label \{ display: none !important; \}/);
     expect(indexSrc).toMatch(/className="sarkari-update-grid sarkari-dense-update-grid"/);
     expect(indexSrc).toMatch(/className="sarkari-update-number"/);
     expect(indexSrc).toMatch(/className="sarkari-browse-grid"/);
-    expect(indexSrc).not.toMatch(/SarkariCarousel|expandedDirectories|Show all|Show less/);
+    expect(indexSrc).not.toMatch(/expandedDirectories|Show all|Show less/);
+    expect(carouselSrc).toMatch(/items\.length > 1/);
+    expect(carouselSrc).not.toMatch(/setInterval|autoplay/i);
+    expect(tailwindContentSrc).toContain('"./src/components/sarkari/SarkariCarousel.tsx"');
   });
 
   it("uses concise update language and accessible orientation", () => {
@@ -65,6 +77,9 @@ describe("Sarkari homepage layout (static source assertions)", () => {
     expect(indexSrc).toMatch(/Skip to main content/);
     expect(indexSrc).toMatch(/aria-live="polite"/);
     expect(headerSrc).toMatch(/aria-current/);
+    expect(carouselSrc).toMatch(/aria-roledescription="carousel"/);
+    expect(carouselSrc).toMatch(/event\.target !== event\.currentTarget/);
+    expect(carouselSrc).toMatch(/event\.key === "Home" \|\| event\.key === "End"/);
   });
 
   it("gives the primary search field stable form and label semantics", () => {
@@ -89,6 +104,9 @@ describe("Sarkari homepage layout (static source assertions)", () => {
     expect(denseStyles).toMatch(/--sarkari-motion-ui: 180ms/);
     expect(denseStyles).toMatch(/\.sarkari-search:focus-within/);
     expect(denseStyles).toMatch(/\.sarkari-trending-card::before/);
+    expect(denseStyles).toMatch(/\.sarkari-trending-heading h2::before[\s\S]*background: hsl\(var\(--destructive\)\)/);
+    expect(denseStyles).toMatch(/\.sarkari-trending-card:hover \.sarkari-trending-number[\s\S]*box-shadow:/);
+    expect(denseStyles).toMatch(/\.sarkari-update-card:hover \.sarkari-update-number[\s\S]*box-shadow:/);
     expect(denseStyles).toMatch(/\.sarkari-dense-new-label \{[\s\S]*display: inline-flex;/);
     expect(denseStyles).toMatch(/@media \(hover: hover\) and \(pointer: fine\)/);
     expect(denseStyles).not.toMatch(/animation:\s*(?:pulse|bounce|marquee|shimmer)/);

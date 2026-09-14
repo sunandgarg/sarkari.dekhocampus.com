@@ -89,6 +89,7 @@ export function SarkariCarousel({ children, ariaLabel, className = "" }: Sarkari
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return;
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       event.preventDefault();
       move(event.key === "ArrowLeft" ? -1 : 1);
@@ -100,12 +101,22 @@ export function SarkariCarousel({ children, ariaLabel, className = "" }: Sarkari
 
   return (
     <div className={`sarkari-carousel ${className}`} role="group" aria-roledescription="carousel" aria-label={ariaLabel}>
-      <div className="sarkari-carousel-controls" role="group" aria-label="Carousel navigation">
-        <span className="sarkari-carousel-status" aria-live="polite" aria-atomic="true">Page {currentPage} of {pageCount}</span>
-        <button type="button" onClick={() => move(-1)} disabled={!canPrevious} aria-label={`Previous ${ariaLabel}`} aria-controls={trackId}><ArrowLeft aria-hidden="true" /></button>
-        <button type="button" onClick={() => move(1)} disabled={!canNext} aria-label={`Next ${ariaLabel}`} aria-controls={trackId}><ArrowRight aria-hidden="true" /></button>
-      </div>
-      <div id={trackId} className="sarkari-carousel-track" ref={trackRef} onScroll={queueSync} onKeyDown={handleKeyDown} aria-label={`${ariaLabel}. Use left and right arrow keys to browse.`} tabIndex={0}>
+      {items.length > 1 && (
+        <div className="sarkari-carousel-controls" role="group" aria-label="Carousel navigation">
+          <span className="sarkari-carousel-status" aria-live="polite" aria-atomic="true">Page {currentPage} of {pageCount}</span>
+          <button type="button" onClick={() => move(-1)} disabled={!canPrevious} aria-label={`Previous ${ariaLabel}`} aria-controls={trackId}><ArrowLeft aria-hidden="true" /></button>
+          <button type="button" onClick={() => move(1)} disabled={!canNext} aria-label={`Next ${ariaLabel}`} aria-controls={trackId}><ArrowRight aria-hidden="true" /></button>
+        </div>
+      )}
+      <div
+        id={trackId}
+        className="sarkari-carousel-track"
+        ref={trackRef}
+        onScroll={queueSync}
+        onKeyDown={handleKeyDown}
+        aria-label={items.length > 1 ? `${ariaLabel}. Use left and right arrow keys to browse.` : ariaLabel}
+        tabIndex={items.length > 1 ? 0 : undefined}
+      >
         {items.map((child, index) => (
           <div className="sarkari-carousel-item" role="group" aria-roledescription="slide" aria-label={`${index + 1} of ${items.length}`} key={index}>{child}</div>
         ))}
