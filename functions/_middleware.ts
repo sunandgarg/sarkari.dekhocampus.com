@@ -19,7 +19,7 @@ function contentSecurityPolicy(nonce: string) {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' data: https://fonts.gstatic.com",
     "img-src 'self' data: blob: https:",
-    "connect-src 'self' https://aws-origin.dekhocampus.com https://*.dekhocampus.com https://*.google-analytics.com https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com https://*.gstatic.com https://*.googletagservices.com https://*.googleadservices.com https://*.clarity.ms https://bat.bing.com https://c.bing.com https://*.hotjar.com https://*.hotjar.io wss://*.hotjar.com wss://*.hotjar.io https://connect.facebook.net https://www.facebook.com https://snap.licdn.com https://px.ads.linkedin.com https://www.linkedin.com https://plausible.io https://cloudflareinsights.com",
+    "connect-src 'self' https://aws-origin.dekhocampus.com https://*.dekhocampus.com https://*.google-analytics.com https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com https://*.gstatic.com https://*.googletagservices.com https://*.googleadservices.com https://*.adtrafficquality.google https://*.clarity.ms https://bat.bing.com https://c.bing.com https://*.hotjar.com https://*.hotjar.io wss://*.hotjar.com wss://*.hotjar.io https://connect.facebook.net https://www.facebook.com https://snap.licdn.com https://px.ads.linkedin.com https://www.linkedin.com https://plausible.io https://cloudflareinsights.com",
     "frame-src 'self' https://*.googletagmanager.com https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com https://*.gstatic.com https://www.youtube.com https://www.youtube-nocookie.com",
     "media-src 'self' blob: https:",
     "worker-src 'self' blob:",

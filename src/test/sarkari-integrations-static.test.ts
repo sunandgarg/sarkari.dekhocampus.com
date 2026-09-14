@@ -49,6 +49,7 @@ describe("Sarkari public integrations and secret boundary", () => {
       "https://*.googlesyndication.com",
       "https://*.googleadservices.com",
       "https://*.googletagservices.com",
+      "https://*.adtrafficquality.google",
       "https://*.google.com",
       "https://*.clarity.ms",
       "https://connect.facebook.net",

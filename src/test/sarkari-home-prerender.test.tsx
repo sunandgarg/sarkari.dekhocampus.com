@@ -1,8 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "@testing-library/react";
 import { hydrateRoot, type Root } from "react-dom/client";
 import App from "@/App";
 import { renderHomePrerender } from "@/entry-server";
+import { COOKIE_PREFS_KEY } from "@/lib/cookiePreferences";
+import { COOKIE_CONSENT_KEY } from "@/lib/promptSequence";
 import {
   HOME_CRITICAL_CSS_END,
   HOME_CRITICAL_CSS_START,
@@ -16,6 +18,8 @@ import {
 } from "@/lib/homePrerender";
 
 describe("Sarkari exact-home prerender", () => {
+  beforeEach(() => localStorage.clear());
+
   it("renders the real deterministic homepage while optional integrations stay absent", () => {
     vi.stubGlobal("__APP_BUILD_YEAR__", 2026);
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
@@ -56,7 +60,7 @@ describe("Sarkari exact-home prerender", () => {
     expect(hasHydratableHomePrerender(root, { pathname: "/", search: "" })).toBe(false);
   });
 
-  it("hydrates the real app without recovery and preserves server DOM identity", async () => {
+  it("hydrates with saved marketing consent without recovery and preserves server DOM identity", async () => {
     vi.stubGlobal("__APP_BUILD_YEAR__", 2026);
     vi.stubGlobal("requestAnimationFrame", vi.fn(() => 1));
     vi.stubGlobal("cancelAnimationFrame", vi.fn());
@@ -71,17 +75,21 @@ describe("Sarkari exact-home prerender", () => {
     const container = document.createElement("div");
     container.id = "root";
     container.innerHTML = renderHomePrerender();
+    localStorage.setItem(COOKIE_CONSENT_KEY, "accepted");
+    localStorage.setItem(COOKIE_PREFS_KEY, JSON.stringify({ prefill: true, analytics: true, marketing: true }));
     document.body.append(container);
     const serverHeading = container.querySelector(".sarkari-hero h1");
     const recoverableErrors: unknown[] = [];
     let hydratedRoot: Root | undefined;
 
     try {
-      act(() => {
+      await act(async () => {
         hydratedRoot = hydrateRoot(container, <App />, {
           identifierPrefix: HOME_PRERENDER_IDENTIFIER_PREFIX,
           onRecoverableError: (error) => recoverableErrors.push(error),
         });
+        await Promise.resolve();
+        await Promise.resolve();
       });
 
       expect(recoverableErrors).toEqual([]);
@@ -89,6 +97,7 @@ describe("Sarkari exact-home prerender", () => {
     } finally {
       act(() => hydratedRoot?.unmount());
       container.remove();
+      localStorage.clear();
       vi.restoreAllMocks();
       vi.unstubAllGlobals();
     }

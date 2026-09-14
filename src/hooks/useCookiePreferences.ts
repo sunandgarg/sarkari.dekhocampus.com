@@ -5,13 +5,25 @@ import { COOKIE_CONSENT_KEY } from "@/lib/promptSequence";
 
 const hardReloadCurrentPage = () => window.location.reload();
 
+const hydrationSafePreferences = (): CookiePreferences => ({
+  resolved: false,
+  essential: true,
+  prefill: false,
+  analytics: false,
+  marketing: false,
+});
+
 export function crossTabTrackingChangeRequiresReload(previous: CookiePreferences, next: CookiePreferences) {
   return previous.resolved
     && (previous.analytics !== next.analytics || previous.marketing !== next.marketing);
 }
 
 export function useCookiePreferences(reloadOnCrossTabTrackingChange: () => void = hardReloadCurrentPage) {
-  const [preferences, setPreferences] = useState(readCookiePreferences);
+  // The homepage is server-rendered without browser storage. Always begin with
+  // that same unresolved snapshot, then read the visitor's saved choice after
+  // hydration. Returning users therefore cannot introduce consent-only ad
+  // boundaries while React is still matching the server tree.
+  const [preferences, setPreferences] = useState<CookiePreferences>(hydrationSafePreferences);
   const preferencesRef = useRef(preferences);
   preferencesRef.current = preferences;
 
@@ -32,6 +44,7 @@ export function useCookiePreferences(reloadOnCrossTabTrackingChange: () => void 
       // vendor code after either a grant or a withdrawal changes its topology.
       if (crossTabTrackingChangeRequiresReload(previous, next)) reloadOnCrossTabTrackingChange();
     };
+    refresh();
     window.addEventListener(COOKIE_RESOLVED_EVENT, refresh);
     window.addEventListener("storage", onStorage);
     return () => {

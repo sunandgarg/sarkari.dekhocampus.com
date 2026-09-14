@@ -16,6 +16,7 @@ describe("Sarkari Pages CSP middleware", () => {
     expect(csp).not.toContain("'unsafe-eval'");
     expect(csp).toContain("https://aws-origin.dekhocampus.com");
     expect(csp).toContain("https://*.googlesyndication.com");
+    expect(csp).toContain("https://*.adtrafficquality.google");
     expect(csp).not.toMatch(/connect-src 'self' https:\s+wss:(?:;|\s)/);
     expect(csp).not.toMatch(/frame-src 'self' https:(?:;|\s)/);
     expect(csp).toContain("script-src-attr 'none'");
