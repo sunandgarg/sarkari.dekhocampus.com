@@ -1,4 +1,5 @@
 import { Checkbox } from "@/components/ui/checkbox";
+import { absoluteSiteUrl } from "@/lib/constant";
 export { LEAD_CONSENT_TEXT } from "@/lib/leadConsent";
 
 interface LeadConsentCheckboxProps {
@@ -12,8 +13,8 @@ interface LeadConsentCheckboxProps {
   invalid?: boolean;
 }
 
-const PRIVACY_POLICY_URL = "https://dekhocampus.com/legal/privacy-policy";
-const TERMS_URL = "https://dekhocampus.com/legal/terms-of-service";
+const PRIVACY_POLICY_URL = absoluteSiteUrl("/legal/privacy-policy");
+const TERMS_URL = absoluteSiteUrl("/legal/terms-of-service");
 
 export function LeadConsentCheckbox({
   checked,
@@ -38,7 +39,7 @@ export function LeadConsentCheckbox({
         aria-invalid={invalid}
       />
       <span className={`${compact ? "text-[10px] leading-4" : "text-[11px] leading-tight"} ${dark ? "text-white/75" : "text-muted-foreground"} ${textClassName}`}>
-        I agree to DekhoCampus{" "}
+        I confirm I am at least 18 years old and agree to DekhoCampus{" "}
         <a href={PRIVACY_POLICY_URL} className={`inline-flex min-h-11 items-center ${linkClass}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
           Privacy Policy
         </a>{" "}

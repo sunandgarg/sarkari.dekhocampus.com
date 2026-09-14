@@ -1,11 +1,12 @@
 import { ArrowRight, Award, BellRing, BookOpenCheck, BriefcaseBusiness, Building2, Calculator, CalendarDays, ChevronRight, ClipboardList, GraduationCap, Hammer, HeartPulse, Keyboard, Landmark, Mail, MapPin, School, Search, Shield, Siren, Stethoscope, TrainFront, UserRoundSearch, Wrench } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { SEO } from "@/components/SEO";
 import { SarkariCarousel } from "@/components/sarkari/SarkariCarousel";
 import { SarkariFooter } from "@/components/sarkari/SarkariFooter";
 import { SarkariHeader } from "@/components/sarkari/SarkariHeader";
+import { SarkariAdSlot } from "@/components/sarkari/SarkariAdSlot";
 import { SARKARI_ARCHIVE_PAGE_SIZE, usePublicArticleArchive, useSarkariHomepageArticles, type DbArticle } from "@/hooks/useArticlesData";
 import { isSarkariCategory, normalizeSarkariCategory, SARKARI_CATEGORIES } from "@/lib/sarkariCategories";
 import { SITE_CONFIG } from "@/lib/constant";
@@ -222,7 +223,7 @@ export default function Index() {
         title={pageTitle}
         description="Latest government jobs, results, admit cards, answer keys, admissions, syllabus and scholarship updates in one place."
         canonical={canonicalPath}
-        keywords="sarkari result, government jobs, admit card, exam result, sarkari naukri, online form"
+        keywords="government jobs, government exam results, public sector recruitment, admit card, answer key, online form"
         ogImage={SITE_CONFIG.ogImagePath}
         ogImageAlt="Sarkari DekhoCampus DC logo"
         twitterCard="summary"
@@ -230,6 +231,7 @@ export default function Index() {
       />
       <a className="sarkari-skip-link" href="#content">Skip to main content</a>
       <SarkariHeader />
+      <SarkariAdSlot placement="homepage" position="top" pageKey="homepage" className="sarkari-ad-placement sarkari-ad-placement--rectangle" />
 
       <main id="content">
         <section className="sarkari-hero">
@@ -294,7 +296,8 @@ export default function Index() {
           ) : visibleGroups.length ? (
             <section className="sarkari-update-sections sarkari-dense-update-sections" aria-label="Latest updates by category">
               {visibleGroups.map((group, groupIndex) => (
-                <section className="sarkari-update-row sarkari-dense-update-row" key={group.category} aria-labelledby={`sarkari-update-heading-${groupIndex}`}>
+                <Fragment key={group.category}>
+                <section className="sarkari-update-row sarkari-dense-update-row" aria-labelledby={`sarkari-update-heading-${groupIndex}`}>
                   <div className="sarkari-update-row-heading">
                     <div>
                       <small>{hasFilters ? "Matching updates" : "Latest section"}</small>
@@ -316,6 +319,13 @@ export default function Index() {
                     </ol>
                   ) : <p className="sarkari-empty">No matching updates found.</p>}
                 </section>
+                {!hasFilters && group.category === "Latest Jobs" && (
+                  <SarkariAdSlot placement="homepage" position="after-latest-jobs" pageKey="homepage" category={group.category} className="sarkari-ad-placement sarkari-ad-placement--wide" />
+                )}
+                {!hasFilters && group.category === "Admit Card" && (
+                  <SarkariAdSlot placement="homepage" position="after-admit-cards" pageKey="homepage" category={group.category} className="sarkari-ad-placement sarkari-ad-placement--wide" />
+                )}
+                </Fragment>
               ))}
               {hasFilters && (currentPage > 1 || archiveQuery.data?.hasNextPage) && (
                 <nav className="sarkari-archive-pagination" aria-label="Update results pages">
@@ -330,7 +340,8 @@ export default function Index() {
           {!hasFilters && (
             <section className="sarkari-discovery sarkari-dense-discovery" aria-label="Browse government jobs">
               {directoryGroups.map(({ eyebrow, title, icon: Icon, items }, groupIndex) => (
-                <section className="sarkari-browse-section" key={title} aria-labelledby={`sarkari-browse-heading-${groupIndex}`}>
+                <Fragment key={title}>
+                <section className="sarkari-browse-section" aria-labelledby={`sarkari-browse-heading-${groupIndex}`}>
                   <div className="sarkari-section-heading sarkari-dense-section-heading">
                     <div><span>{eyebrow}</span><h2 id={`sarkari-browse-heading-${groupIndex}`}>{title}</h2></div>
                     <Icon aria-hidden="true" />
@@ -350,6 +361,9 @@ export default function Index() {
                     })}
                   </ul>
                 </section>
+                {groupIndex === 0 && <SarkariAdSlot placement="homepage" position="after-positions" pageKey="homepage" className="sarkari-ad-placement sarkari-ad-placement--wide" />}
+                {groupIndex === 2 && <SarkariAdSlot placement="homepage" position="after-department" pageKey="homepage" className="sarkari-ad-placement sarkari-ad-placement--wide" />}
+                </Fragment>
               ))}
 
               <section className="sarkari-browse-section sarkari-states" aria-labelledby="sarkari-state-heading">
@@ -381,6 +395,7 @@ export default function Index() {
                   <Link to="/?category=Latest%20Jobs">See today&apos;s updates <ArrowRight aria-hidden="true" /></Link>
                 )}
               </aside>
+              <SarkariAdSlot placement="homepage" position="bottom" pageKey="homepage" className="sarkari-ad-placement sarkari-ad-placement--rectangle" />
             </section>
           )}
 

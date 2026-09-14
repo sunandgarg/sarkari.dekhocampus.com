@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { useAdsenseSettings, useAdScripts } from "@/hooks/useAdsense";
+import { resolveAdsenseRuntime, useAdsenseSettings, useAdScripts } from "@/hooks/useAdsense";
 import { useCookiePreferences } from "@/hooks/useCookiePreferences";
 
 /**
@@ -10,14 +10,17 @@ import { useCookiePreferences } from "@/hooks/useCookiePreferences";
  */
 export function AdsenseLoader() {
   const { pathname } = useLocation();
-  const { data: settings } = useAdsenseSettings();
-  const { data: scripts } = useAdScripts();
   const preferences = useCookiePreferences();
 
   const isAdmin = pathname.startsWith("/admin");
+  const settingsQuery = useAdsenseSettings({ enabled: !isAdmin });
+  const settings = settingsQuery.data;
+  const runtime = resolveAdsenseRuntime(settings);
+  const runtimeEnabled = settingsQuery.isSuccess && runtime.globallyEnabled && Boolean(runtime.clientId);
+  const { data: scripts } = useAdScripts({ enabled: !isAdmin && runtimeEnabled });
 
   useEffect(() => {
-    if (isAdmin || !preferences.resolved || !preferences.marketing || !settings || !settings.ads_globally_enabled) return;
+    if (isAdmin || !preferences.resolved || !preferences.marketing || !runtimeEnabled) return;
 
     // Defer heavy 3rd-party ad scripts until after LCP so they don't
     // block the main thread on first paint (huge PageSpeed win).
@@ -28,6 +31,7 @@ export function AdsenseLoader() {
     }, 5000);
 
     const created: Node[] = [];
+    const cleanupFns: Array<() => void> = [];
     const nonce = document.querySelector<HTMLScriptElement>("script[nonce]")?.nonce || "";
 
     function runInject() {
@@ -78,8 +82,8 @@ export function AdsenseLoader() {
     };
 
     // AdSense library
-    if (settings.client_id || settings.publisher_id) {
-      const cid = settings.client_id || settings.publisher_id;
+    if (runtime.clientId) {
+      const cid = runtime.clientId;
       addScript("adsbygoogle-lib", {
         async: "",
         src: `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${cid}`,
@@ -88,8 +92,8 @@ export function AdsenseLoader() {
     }
 
     // Auto Ads
-    if (settings.auto_ads_enabled && (settings.client_id || settings.publisher_id)) {
-      const cid = settings.client_id || settings.publisher_id;
+    if (runtime.autoAdsEnabled && runtime.clientId) {
+      const cid = runtime.clientId;
       addScript(
         "adsbygoogle-autoads",
         {},
@@ -98,17 +102,25 @@ export function AdsenseLoader() {
     }
 
     // Verification meta
-    if (settings.verification_meta && !document.getElementById("adsense-verify-meta")) {
-      const meta = document.createElement("meta");
-      meta.id = "adsense-verify-meta";
-      meta.name = "google-adsense-account";
-      meta.content = settings.verification_meta;
-      document.head.appendChild(meta);
-      created.push(meta);
+    const verificationMeta = settings?.verification_meta?.trim() || runtime.clientId || "";
+    if (verificationMeta) {
+      const existing = document.querySelector<HTMLMetaElement>('meta[name="google-adsense-account"]');
+      if (existing) {
+        const previous = existing.content;
+        existing.content = verificationMeta;
+        cleanupFns.push(() => { existing.content = previous; });
+      } else {
+        const meta = document.createElement("meta");
+        meta.id = "adsense-verify-meta";
+        meta.name = "google-adsense-account";
+        meta.content = verificationMeta;
+        document.head.appendChild(meta);
+        created.push(meta);
+      }
     }
 
     // Custom CSS
-    if (settings.custom_css?.trim() && !document.getElementById("adsense-custom-css")) {
+    if (settings?.custom_css?.trim() && !document.getElementById("adsense-custom-css")) {
       const style = document.createElement("style");
       style.id = "adsense-custom-css";
       style.textContent = settings.custom_css;
@@ -117,14 +129,14 @@ export function AdsenseLoader() {
     }
 
     // Custom JS
-    if (settings.custom_js?.trim()) {
+    if (settings?.custom_js?.trim()) {
       addScript("adsense-custom-js", {}, settings.custom_js);
     }
 
     // Raw head/body/footer scripts from settings
-    addRawHtml("adsense-head-scripts", settings.head_scripts || "", "head");
-    addRawHtml("adsense-body-scripts", settings.body_scripts || "", "body");
-    addRawHtml("adsense-footer-scripts", settings.footer_scripts || "", "body");
+    addRawHtml("adsense-head-scripts", settings?.head_scripts || "", "head");
+    addRawHtml("adsense-body-scripts", settings?.body_scripts || "", "body");
+    addRawHtml("adsense-footer-scripts", settings?.footer_scripts || "", "body");
 
     // Admin-defined ad_scripts table entries
     const now = Date.now();
@@ -139,12 +151,36 @@ export function AdsenseLoader() {
     return () => {
       cancelled = true;
       window.clearTimeout(handle);
+      cleanupFns.forEach((cleanup) => cleanup());
       created.forEach((el) => el.parentNode?.removeChild(el));
-      document.querySelectorAll(
-        'script[src*="googlesyndication.com"],script[src*="googleadservices.com"],iframe[src*="googlesyndication.com"],iframe[src*="doubleclick.net"]',
-      ).forEach((node) => node.remove());
     };
-  }, [isAdmin, preferences.marketing, preferences.resolved, settings, scripts]);
+  }, [
+    isAdmin,
+    preferences.marketing,
+    preferences.resolved,
+    runtime.autoAdsEnabled,
+    runtime.clientId,
+    runtime.usingFallbackIdentity,
+    runtimeEnabled,
+    scripts,
+    settings,
+  ]);
+
+  useEffect(() => {
+    const advertisingPermitted = !isAdmin
+      && preferences.resolved
+      && preferences.marketing
+      && runtimeEnabled;
+    if (advertisingPermitted) return;
+
+    // Only clear Google's global queue and rendered frames when advertising is
+    // actually disallowed. Clearing it during a routine query rerender could
+    // discard a manual-slot request queued before the deferred library loads.
+    document.querySelectorAll(
+      'script[src*="googlesyndication.com"],script[src*="googleadservices.com"],iframe[src*="googlesyndication.com"],iframe[src*="doubleclick.net"],.google-auto-placed',
+    ).forEach((node) => node.remove());
+    try { delete (window as Window & { adsbygoogle?: unknown }).adsbygoogle; } catch { /* noop */ }
+  }, [isAdmin, preferences.marketing, preferences.resolved, runtimeEnabled]);
 
   return null;
 }

@@ -1,4 +1,9 @@
 import { SARKARI_SITE_SCOPE } from "./siteScope";
+import {
+  containsBlockedPublicSource,
+  stripVisibleArticleSources,
+  stripVisibleSourceBrands,
+} from "./articleContentSanitizer";
 
 export const PUBLIC_ARTICLE_LIST_FIELDS =
   "id,site_scope,status,title,slug,description,vertical,category,author,featured_image,views,tags,is_active,featured_rank,created_at,updated_at";
@@ -33,6 +38,25 @@ export type PublicSarkariArticle = {
   created_at: string;
   updated_at: string;
 };
+
+export function sanitizePublicSarkariArticle(article: PublicSarkariArticle): PublicSarkariArticle {
+  const title = stripVisibleSourceBrands(article.title);
+  const author = stripVisibleSourceBrands(article.author) || "Sarkari DekhoCampus Desk";
+  return {
+    ...article,
+    title,
+    description: stripVisibleArticleSources(article.description),
+    content: article.content === undefined ? undefined : stripVisibleArticleSources(article.content),
+    vertical: stripVisibleSourceBrands(article.vertical),
+    category: stripVisibleSourceBrands(article.category),
+    author,
+    featured_image: containsBlockedPublicSource(article.featured_image) ? "" : article.featured_image,
+    tags: article.tags.map(stripVisibleSourceBrands).filter(Boolean),
+    meta_title: article.meta_title === undefined ? undefined : stripVisibleSourceBrands(article.meta_title),
+    meta_description: article.meta_description === undefined ? undefined : stripVisibleArticleSources(article.meta_description),
+    meta_keywords: article.meta_keywords === undefined ? undefined : stripVisibleSourceBrands(article.meta_keywords),
+  };
+}
 
 type BootstrapEnvelope = {
   version: typeof SARKARI_ARTICLE_BOOTSTRAP_VERSION;
@@ -73,6 +97,7 @@ export function validatePublicSarkariArticle(value: unknown, expectedSlug: strin
   if (!isRecord(value)) return undefined;
   const canonicalSlug = normalizeSarkariArticleSlug(expectedSlug);
   if (!canonicalSlug || canonicalSlug !== expectedSlug || value.slug !== canonicalSlug) return undefined;
+  if (containsBlockedPublicSource(canonicalSlug)) return undefined;
   if (value.site_scope !== SARKARI_SITE_SCOPE) return undefined;
   if (!isPublishedArticleStatus(value.status)) return undefined;
   if (value.is_active !== true && value.is_active !== 1) return undefined;
@@ -90,7 +115,7 @@ export function validatePublicSarkariArticle(value: unknown, expectedSlug: strin
   const metaKeywords = boundedString(value.meta_keywords, 5_000);
   const createdAt = boundedString(value.created_at, 64, true);
   const updatedAt = boundedString(value.updated_at, 64) || createdAt;
-  if (!id || !title || description === undefined || content === undefined || vertical === undefined ||
+  if (!id || containsBlockedPublicSource(id) || !title || description === undefined || content === undefined || vertical === undefined ||
       category === undefined || author === undefined || featuredImage === undefined || metaTitle === undefined ||
       metaDescription === undefined || metaKeywords === undefined || !createdAt || !updatedAt) return undefined;
 
@@ -106,7 +131,7 @@ export function validatePublicSarkariArticle(value: unknown, expectedSlug: strin
     featuredRank = value.featured_rank;
   }
 
-  return {
+  const sanitized = sanitizePublicSarkariArticle({
     id,
     site_scope: SARKARI_SITE_SCOPE,
     status: "Published",
@@ -127,11 +152,15 @@ export function validatePublicSarkariArticle(value: unknown, expectedSlug: strin
     featured_rank: featuredRank,
     created_at: createdAt,
     updated_at: updatedAt,
-  };
+  });
+  return sanitized.title ? sanitized : undefined;
 }
 
 export function serializeSarkariArticleBootstrap(article: PublicSarkariArticle) {
-  const envelope: BootstrapEnvelope = { version: SARKARI_ARTICLE_BOOTSTRAP_VERSION, article };
+  const envelope: BootstrapEnvelope = {
+    version: SARKARI_ARTICLE_BOOTSTRAP_VERSION,
+    article: sanitizePublicSarkariArticle(article),
+  };
   return JSON.stringify(envelope)
     .replace(/</g, "\\u003c")
     .replace(/\u2028/g, "\\u2028")

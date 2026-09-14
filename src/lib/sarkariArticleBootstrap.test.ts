@@ -57,6 +57,30 @@ describe("Sarkari article bootstrap contract", () => {
     expect(parsed?.is_active).toBe(true);
   });
 
+  it("removes discovery-source names from every public text and bootstrap field", () => {
+    const contaminated = {
+      ...bootstrapArticle,
+      title: "Railway Clerk via Sarkari Result",
+      description: "Dates from govt-job-guru.in",
+      content: "<p>Official details.</p><p>Credit: Govt Job Guru</p>",
+      author: "SarkariResult.com",
+      tags: ["Railway", "Sarkari Result"],
+      meta_title: "Railway Clerk | GovtJobGuru",
+      meta_description: "According to sarkari-result.com",
+      meta_keywords: "railway, govt job guru",
+      featured_image: "https://sarkariresult.com/image.webp",
+    };
+    const parsed = validatePublicSarkariArticle(contaminated, bootstrapArticle.slug);
+    const serialized = serializeSarkariArticleBootstrap(contaminated);
+    const publicText = JSON.stringify({ parsed, serialized }).toLowerCase();
+
+    expect(parsed?.title).toBe("Railway Clerk");
+    expect(parsed?.author).toBe("Sarkari DekhoCampus Desk");
+    expect(parsed?.tags).toEqual(["Railway"]);
+    expect(parsed?.featured_image).toBe("");
+    expect(publicText).not.toMatch(/sarkari[ ._-]*result|govt[ ._-]*job[ ._-]*guru/);
+  });
+
   it("fails closed for malformed or incomplete payloads", () => {
     expect(parseSarkariArticleBootstrap("not-json", bootstrapArticle.slug, `/news/${bootstrapArticle.slug}`)).toBeUndefined();
     expect(parseSarkariArticleBootstrap(JSON.stringify({ version: 2, article: bootstrapArticle }), bootstrapArticle.slug, `/news/${bootstrapArticle.slug}`)).toBeUndefined();
@@ -64,5 +88,8 @@ describe("Sarkari article bootstrap contract", () => {
     expect(validatePublicSarkariArticle({ ...bootstrapArticle, tags: ["x".repeat(201)] }, bootstrapArticle.slug)).toBeUndefined();
     expect(validatePublicSarkariArticle({ ...bootstrapArticle, content: "x".repeat(500_001) }, bootstrapArticle.slug)).toBeUndefined();
     expect(validatePublicSarkariArticle({ ...bootstrapArticle, featured_rank: "1" }, bootstrapArticle.slug)).toBeUndefined();
+    const blockedSlug = "railway-clerk-sarkari-result";
+    expect(validatePublicSarkariArticle({ ...bootstrapArticle, slug: blockedSlug }, blockedSlug)).toBeUndefined();
+    expect(validatePublicSarkariArticle({ ...bootstrapArticle, id: "govt-job-guru-card" }, bootstrapArticle.slug)).toBeUndefined();
   });
 });

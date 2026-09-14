@@ -8,8 +8,27 @@
 /news/:slug/ /news/:slug 301
 /news/tag/:tag/ /news/tag/:tag 301
 
+# Canonical legal routes and common legacy aliases.
+/privacy-policy /legal/privacy-policy 301
+/cookie-policy /legal/cookie-policy 301
+/terms /legal/terms-of-service 301
+/terms-and-conditions /legal/terms-of-service 301
+/disclaimer /legal/disclaimer 301
+/editorial-policy /legal/editorial-corrections 301
+/corrections-policy /legal/editorial-corrections 301
+/legal/privacy-policy/ /legal/privacy-policy 301
+/legal/cookie-policy/ /legal/cookie-policy 301
+/legal/terms-of-service/ /legal/terms-of-service 301
+/legal/disclaimer/ /legal/disclaimer 301
+/legal/editorial-corrections/ /legal/editorial-corrections 301
+
 # Preserve only the supported single-segment public routes. A top-level 404.html
 # handles everything else, so missing JS/CSS under /assets never receives the
 # application shell with a misleading 200 response.
 /news/tag/:tag /__sarkari_article_shell.asset 200
 /news/:slug /__sarkari_article_shell.asset 200
+/legal/privacy-policy /__sarkari_legal_privacy-policy.asset 200
+/legal/cookie-policy /__sarkari_legal_cookie-policy.asset 200
+/legal/terms-of-service /__sarkari_legal_terms-of-service.asset 200
+/legal/disclaimer /__sarkari_legal_disclaimer.asset 200
+/legal/editorial-corrections /__sarkari_legal_editorial-corrections.asset 200

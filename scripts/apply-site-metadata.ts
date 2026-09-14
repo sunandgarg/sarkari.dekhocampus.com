@@ -98,6 +98,13 @@ function writeLlms() {
 - [Syllabus](${absoluteSiteUrl("/?category=Syllabus")})
 - [Scholarships](${absoluteSiteUrl("/?category=Scholarships")})
 
+## Policies and accountability
+- [Privacy Policy](${absoluteSiteUrl("/legal/privacy-policy")})
+- [Cookie Policy](${absoluteSiteUrl("/legal/cookie-policy")})
+- [Terms of Use](${absoluteSiteUrl("/legal/terms-of-service")})
+- [Independence and Information Disclaimer](${absoluteSiteUrl("/legal/disclaimer")})
+- [Editorial, Corrections and Takedown Policy](${absoluteSiteUrl("/legal/editorial-corrections")})
+
 ## Crawling notes
 - Prefer canonical URLs on the production domain.
 - Ignore admin, auth, onboarding, and dashboard routes.
@@ -114,6 +121,7 @@ function writeLlms() {
 
 ## Contact
 - ${SITE_CONFIG.supportEmail}
+- ${SITE_CONFIG.supportPhoneDisplay}
 `;
   writeFileSync(llmsPath, content);
 }

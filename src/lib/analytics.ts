@@ -13,6 +13,8 @@
  *   - lp_lead_submit       { lp_type, lp_slug, source, ...utm }
  */
 
+import { readCookiePreferences } from "@/lib/cookiePreferences";
+
 export type LpEventName =
   | "lp_view"
   | "lp_otp_sent"
@@ -37,13 +39,15 @@ export function getUtmParams(): AnalyticsParams {
 
 export function trackEvent(name: LpEventName | string, params: AnalyticsParams = {}) {
   if (typeof window === "undefined") return;
+  const preferences = readCookiePreferences();
+  if (!preferences.resolved || (!preferences.analytics && !preferences.marketing)) return;
   const payload = { ...getUtmParams(), ...params, event_time: Date.now() };
-  try {
-    (window as any).gtag?.("event", name, payload);
-  } catch {/* noop */}
-  try {
-    (window as any).fbq?.("trackCustom", name, payload);
-  } catch {/* noop */}
+  if (preferences.analytics) {
+    try { (window as any).gtag?.("event", name, payload); } catch {/* noop */}
+  }
+  if (preferences.marketing) {
+    try { (window as any).fbq?.("trackCustom", name, payload); } catch {/* noop */}
+  }
   try {
     (window as any).dataLayer = (window as any).dataLayer || [];
     (window as any).dataLayer.push({ event: name, ...payload });
@@ -59,57 +63,65 @@ export function trackEvent(name: LpEventName | string, params: AnalyticsParams =
   }
 
   // Persist lead-popup funnel events through the Node/MySQL compatibility client.
-  try {
-    if (typeof name === "string" && name.startsWith("lp_popup_")) {
-      // Lazy import keeps the compatibility client out of the initial bundle path.
-      import("@/integrations/backend/client").then(({ backendClient }) => {
-        let sid = "anon";
-        try { sid = localStorage.getItem("dc_session_id") || "anon"; } catch {}
-        (backendClient as any).from("user_events").insert({
-          session_id: sid,
-          event_type: name,
-          path: typeof location !== "undefined" ? location.pathname : null,
-          metadata: payload,
-          user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-        }).then(() => {}, () => {});
-      }).catch(() => {});
-    }
-    // Persist CTA click events (Apply/Talk/Brochure/etc) for the admin conversion dashboard.
-    if (name === "cta_click") {
-      import("@/integrations/backend/client").then(({ backendClient }) => {
-        let sid = "anon";
-        try {
-          sid = localStorage.getItem("dc_session_id") || "";
-          if (!sid) {
-            sid = (crypto as any)?.randomUUID?.() || `s_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-            localStorage.setItem("dc_session_id", sid);
-          }
-        } catch {}
-        const p = params as any;
-        (backendClient as any).from("cta_events").insert({
-          page: String(p.page || "unknown"),
-          cta: String(p.cta || "unknown"),
-          entity_slug: p.college_slug || p.course_slug || p.exam_slug || p.program_slug || p.slug || null,
-          entity_name: p.entity_name || null,
-          session_id: sid,
-          path: typeof location !== "undefined" ? location.pathname : null,
-          referrer: typeof document !== "undefined" ? document.referrer || null : null,
-          utm_source: (payload as any).utm_source || null,
-          utm_medium: (payload as any).utm_medium || null,
-          utm_campaign: (payload as any).utm_campaign || null,
-          user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-          meta: payload,
-        }).then(() => {}, () => {});
-      }).catch(() => {});
-    }
-  } catch {/* noop */}
+  if (preferences.analytics) {
+    try {
+      if (typeof name === "string" && name.startsWith("lp_popup_")) {
+        // Lazy import keeps the compatibility client out of the initial bundle path.
+        import("@/integrations/backend/client").then(({ backendClient }) => {
+          let sid = "anon";
+          try { sid = localStorage.getItem("dc_session_id") || "anon"; } catch {}
+          (backendClient as any).from("user_events").insert({
+            session_id: sid,
+            event_type: name,
+            path: typeof location !== "undefined" ? location.pathname : null,
+            metadata: payload,
+            user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+          }).then(() => {}, () => {});
+        }).catch(() => {});
+      }
+      // Persist CTA click events (Apply/Talk/Brochure/etc) for the admin conversion dashboard.
+      if (name === "cta_click") {
+        import("@/integrations/backend/client").then(({ backendClient }) => {
+          let sid = "anon";
+          try {
+            sid = localStorage.getItem("dc_session_id") || "";
+            if (!sid) {
+              sid = (crypto as any)?.randomUUID?.() || `s_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+              localStorage.setItem("dc_session_id", sid);
+            }
+          } catch {}
+          const p = params as any;
+          (backendClient as any).from("cta_events").insert({
+            page: String(p.page || "unknown"),
+            cta: String(p.cta || "unknown"),
+            entity_slug: p.college_slug || p.course_slug || p.exam_slug || p.program_slug || p.slug || null,
+            entity_name: p.entity_name || null,
+            session_id: sid,
+            path: typeof location !== "undefined" ? location.pathname : null,
+            referrer: typeof document !== "undefined" ? document.referrer || null : null,
+            utm_source: (payload as any).utm_source || null,
+            utm_medium: (payload as any).utm_medium || null,
+            utm_campaign: (payload as any).utm_campaign || null,
+            user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+            meta: payload,
+          }).then(() => {}, () => {});
+        }).catch(() => {});
+      }
+    } catch {/* noop */}
+  }
 }
 
 /** Lead/Conversion shortcut - also fires the standard generate_lead/Lead events. */
 export function trackLeadConversion(params: AnalyticsParams = {}) {
   if (typeof window === "undefined") return;
-  try { (window as any).gtag?.("event", "generate_lead", { value: 1, currency: "INR", ...params }); } catch {/* noop */}
-  try { (window as any).fbq?.("track", "Lead", params); } catch {/* noop */}
-  try { (window as any).fireGoogleAdsConversion?.(params); } catch {/* noop */}
+  const preferences = readCookiePreferences();
+  if (!preferences.resolved) return;
+  if (preferences.analytics) {
+    try { (window as any).gtag?.("event", "generate_lead", { value: 1, currency: "INR", ...params }); } catch {/* noop */}
+  }
+  if (preferences.marketing) {
+    try { (window as any).fbq?.("track", "Lead", params); } catch {/* noop */}
+    try { (window as any).fireGoogleAdsConversion?.(params); } catch {/* noop */}
+  }
   trackEvent("lp_lead_submit", params);
 }

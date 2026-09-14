@@ -3,6 +3,7 @@ import {
   SARKARI_ARTICLE_BOOTSTRAP_ID,
   isPublishedArticleStatus,
   normalizeSarkariArticleSlug,
+  sanitizePublicSarkariArticle,
   serializeSarkariArticleBootstrap,
   validatePublicSarkariArticle,
   type PublicSarkariArticle,
@@ -84,7 +85,8 @@ function articleImage(article: ArticleRow) {
   return /^https:\/\//i.test(candidate) ? candidate : BRAND_IMAGE;
 }
 
-export function renderArticleHtml(template: string, article: ArticleRow) {
+export function renderArticleHtml(template: string, inputArticle: ArticleRow) {
+  const article = sanitizePublicSarkariArticle(inputArticle);
   const slug = normalizeArticleSlug(article.slug);
   const canonical = `${SITE_URL}/news/${encodeURIComponent(slug)}`;
   const rawTitle = plainText(article.meta_title || article.title);

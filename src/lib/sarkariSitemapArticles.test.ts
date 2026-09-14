@@ -6,6 +6,7 @@ import {
   fetchPublishedArticleEntries,
   SITEMAP_MAX_URLS_PER_SHARD,
 } from "./sarkariSitemapArticles";
+import { SARKARI_LEGAL_PAGES } from "./sarkariLegal";
 
 function response(rows: unknown[], contentRange?: string) {
   return {
@@ -150,13 +151,14 @@ describe("Sarkari article sitemap pagination", () => {
 });
 
 describe("Sarkari sitemap shards", () => {
-  it("emits root only for an empty portal and only populated category archives otherwise", () => {
-    expect(buildSarkariFixedSitemapEntries([]).map((entry) => entry.path)).toEqual(["/"]);
+  it("always emits root and legal pages, plus only populated category archives", () => {
+    const fixedPaths = ["/", ...SARKARI_LEGAL_PAGES.map((page) => page.path)];
+    expect(buildSarkariFixedSitemapEntries([]).map((entry) => entry.path)).toEqual(fixedPaths);
     expect(buildSarkariFixedSitemapEntries([
       { path: "/news/result", changefreq: "daily", priority: "0.8", category: "Results" },
       { path: "/news/job", changefreq: "daily", priority: "0.8", category: "Latest Jobs" },
     ]).map((entry) => entry.path)).toEqual([
-      "/",
+      ...fixedPaths,
       "/?category=Latest%20Jobs",
       "/?category=Results",
     ]);

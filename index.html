@@ -4,16 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Speed: preconnect to backend & CDN origins -->
-    <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com" />
-
     <!-- Primary Meta Tags -->
     <title>Sarkari DekhoCampus - Latest Jobs, Results &amp; Admit Cards</title>
-    <meta name="description" content="Latest government jobs, Sarkari results, admit cards, answer keys, admissions, syllabus and scholarship updates across India.">
-    <meta name="keywords" content="sarkari result, government jobs, sarkari naukri, admit card, answer key, exam result, online form" />
+    <meta name="description" content="Latest government jobs, exam results, admit cards, answer keys, admissions, syllabus and scholarship updates across India.">
+    <meta name="keywords" content="government jobs, government exam results, public sector recruitment, admit card, answer key, online form" />
     <meta name="author" content="Sarkari DekhoCampus" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="google-site-verification" content="3DDCGwQFHjNYmfDh2mU98784SkP9Qnoe5biD8wpA0Zk" />
+
+    <!-- Consent Mode v2 defaults run before any analytics or advertising tag. -->
+    <script data-dc-consent-default>
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+      window.gtag("set", "ads_data_redaction", true);
+      window.gtag("consent", "default", {
+        ad_storage: "denied",
+        ad_user_data: "denied",
+        ad_personalization: "denied",
+        analytics_storage: "denied",
+        wait_for_update: 1000
+      });
+    </script>
 
     <!-- Canonical URL -->
     <link rel="canonical" href="https://sarkari.dekhocampus.com/" />
@@ -66,7 +77,7 @@
         ],
         "contactPoint": {
           "@type": "ContactPoint",
-          "telephone": "+91-9990109797",
+          "telephone": "+91-8010321712",
           "contactType": "customer service",
           "email": "outreach@dekhocampus.com",
           "areaServed": "IN",
@@ -91,8 +102,8 @@
     </script>
     <meta property="og:title" content="Sarkari DekhoCampus - Latest Jobs, Results &amp; Admit Cards">
   <meta name="twitter:title" content="Sarkari DekhoCampus - Latest Jobs, Results &amp; Admit Cards">
-  <meta property="og:description" content="Latest government jobs, Sarkari results, admit cards, answer keys, admissions and scholarship updates.">
-  <meta name="twitter:description" content="Latest government jobs, Sarkari results, admit cards, answer keys, admissions and scholarship updates.">
+  <meta property="og:description" content="Latest government jobs, exam results, admit cards, answer keys, admissions and scholarship updates.">
+  <meta name="twitter:description" content="Latest government jobs, exam results, admit cards, answer keys, admissions and scholarship updates.">
 </head>
 
   <body>
@@ -104,8 +115,19 @@
         const root = document.getElementById("root");
         if (!root) return;
         const exactHome = window.location.pathname === "/" && window.location.search === "";
-        const hasHomePrerender = root.getAttribute("data-sarkari-prerender") === "home";
-        if (!exactHome || !hasHomePrerender) {
+        const normalizedPath = window.location.pathname.replace(/\/+$/, "") || "/";
+        const legalPaths = [
+          "/legal/privacy-policy",
+          "/legal/cookie-policy",
+          "/legal/terms-of-service",
+          "/legal/disclaimer",
+          "/legal/editorial-corrections"
+        ];
+        const prerenderMarker = root.getAttribute("data-sarkari-prerender");
+        const hasHomePrerender = exactHome && prerenderMarker === "home";
+        const hasLegalPrerender = legalPaths.includes(normalizedPath)
+          && prerenderMarker === `legal:${normalizedPath}`;
+        if (!hasHomePrerender && !hasLegalPrerender) {
           root.replaceChildren();
           root.removeAttribute("data-sarkari-prerender");
         }

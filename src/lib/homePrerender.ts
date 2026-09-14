@@ -1,3 +1,5 @@
+import { isSarkariLegalPath } from "./sarkariLegal";
+
 export const HOME_PRERENDER_ATTRIBUTE = "data-sarkari-prerender";
 export const HOME_PRERENDER_VALUE = "home";
 export const HOME_PRERENDER_START = "<!-- SARKARI_HOME_PRERENDER_START -->";
@@ -9,16 +11,46 @@ export const HOME_CRITICAL_CSS_END = "<!-- SARKARI_HOME_CRITICAL_CSS_END -->";
 // internal rewrite target to an extensionless 308 response.
 export const ARTICLE_SHELL_PATH = "/__sarkari_article_shell.asset";
 export const HOME_PRERENDER_IDENTIFIER_PREFIX = "sarkari-home-";
+export const LEGAL_PRERENDER_VALUE_PREFIX = "legal:";
+export const LEGAL_PRERENDER_IDENTIFIER_PREFIX = "sarkari-legal-";
 
 type LocationLike = { pathname: string; search: string };
+type PrerenderRootLike = {
+  getAttribute(name: string): string | null;
+  readonly childElementCount: number;
+  readonly firstElementChild: {
+    readonly classList: { contains(token: string): boolean };
+  } | null;
+};
 
 export function isExactHomeLocation(location: LocationLike) {
   return location.pathname === "/" && location.search === "";
 }
 
-export function hasHydratableHomePrerender(root: HTMLElement, location: LocationLike) {
+export function hasHydratableHomePrerender(root: PrerenderRootLike, location: LocationLike) {
   return isExactHomeLocation(location)
     && root.getAttribute(HOME_PRERENDER_ATTRIBUTE) === HOME_PRERENDER_VALUE
+    && root.childElementCount === 1
+    && root.firstElementChild?.classList.contains("sarkari-site") === true;
+}
+
+function normalizeRoutePath(pathname: string) {
+  return pathname.replace(/\/+$/, "") || "/";
+}
+
+export function legalPrerenderValue(pathname: string) {
+  return `${LEGAL_PRERENDER_VALUE_PREFIX}${normalizeRoutePath(pathname)}`;
+}
+
+/**
+ * A legal document may be preserved only at the exact public route encoded in
+ * its build-time marker. Query parameters do not alter legal-page content, so
+ * campaign and recovery URLs can hydrate the same deterministic server tree.
+ */
+export function hasHydratableLegalPrerender(root: PrerenderRootLike, location: LocationLike) {
+  const pathname = normalizeRoutePath(location.pathname);
+  return isSarkariLegalPath(pathname)
+    && root.getAttribute(HOME_PRERENDER_ATTRIBUTE) === legalPrerenderValue(pathname)
     && root.childElementCount === 1
     && root.firstElementChild?.classList.contains("sarkari-site") === true;
 }

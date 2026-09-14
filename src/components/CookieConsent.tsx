@@ -17,6 +17,11 @@ interface Prefs {
 }
 const DEFAULT_PREFS: Prefs = { essential: true, prefill: false, analytics: false, marketing: false };
 
+export function trackingConsentChangeRequiresReload(previous: ReturnType<typeof readCookiePreferences>, next: Prefs) {
+  return previous.resolved
+    && (previous.analytics !== next.analytics || previous.marketing !== next.marketing);
+}
+
 export interface PrefillCookie {
   name?: string;
   email?: string;
@@ -95,13 +100,36 @@ export function CookieConsent({ initiallyOpen = false }: { initiallyOpen?: boole
   }, [initiallyOpen]);
 
   const persist = (consent: "accepted" | "essential" | "rejected", finalPrefs: Prefs) => {
+    const previousPreferences = readCookiePreferences();
+    const requiresCleanReload = trackingConsentChangeRequiresReload(previousPreferences, finalPrefs);
     localStorage.setItem(COOKIE_KEY, consent);
     localStorage.setItem(PREFS_KEY, JSON.stringify(finalPrefs));
     if (consent !== "accepted" || !finalPrefs.prefill) localStorage.removeItem(PROFILE_KEY);
+    const consentState = {
+      analytics_storage: finalPrefs.analytics ? "granted" : "denied",
+      ad_storage: finalPrefs.marketing ? "granted" : "denied",
+      ad_user_data: finalPrefs.marketing ? "granted" : "denied",
+      ad_personalization: finalPrefs.marketing ? "granted" : "denied",
+    };
+    try { (window as any).gtag?.("consent", "update", consentState); } catch { /* noop */ }
+    try {
+      (window as any).clarity?.("consentv2", {
+        analytics_Storage: finalPrefs.analytics ? "granted" : "denied",
+        ad_Storage: finalPrefs.marketing ? "granted" : "denied",
+      });
+    } catch { /* noop */ }
+    try { (window as any).fbq?.("consent", finalPrefs.marketing ? "grant" : "revoke"); } catch { /* noop */ }
+    // Withdrawal stops first-party behavioural tracking as well as third-party
+    // tags. Remove the optional identifiers immediately; the consent record
+    // below uses a short-lived value only to deduplicate the choice itself.
+    const sid = localStorage.getItem("dc_session_id") || `s_${Date.now()}`;
+    if (!finalPrefs.analytics) {
+      ["dc_intent_visitor_v1", "dc_session_id", "dc_session_started", "dc_session_entry"]
+        .forEach((key) => localStorage.removeItem(key));
+    }
     setOpen(false);
     signalCookieResolved();
     // Log the anonymous audit event without delaying the user's local choice.
-    const sid = localStorage.getItem("dc_session_id") || `s_${Date.now()}`;
     void import("@/integrations/backend/client").then(async ({ backendClient }) => {
       const { error } = await (backendClient as any).from("user_consent").insert({
           session_id: sid,
@@ -118,6 +146,11 @@ export function CookieConsent({ initiallyOpen = false }: { initiallyOpen?: boole
         kind: error instanceof Error ? error.name : "backend_error",
       }));
     });
+    // Third-party or administrator-managed snippets may have registered global
+    // callbacks that cannot be reliably reconfigured in place. Reload after a
+    // resolved tracking-category change so the persisted topology is rebuilt
+    // cleanly; personal prefill alone does not require a reload.
+    if (requiresCleanReload) window.setTimeout(() => window.location.reload(), 150);
   };
 
   const acceptAll = () => persist("accepted", { essential: true, prefill: true, analytics: true, marketing: true });
@@ -171,6 +204,7 @@ export function CookieConsent({ initiallyOpen = false }: { initiallyOpen?: boole
                     </div>
                     <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground sm:text-xs">
                       We use cookies to keep the site secure, remember your preferences and improve your experience. Choose what works for you.
+                      {" "}Read our <a className="font-semibold text-primary underline underline-offset-2" href="/legal/privacy-policy">Privacy Policy</a> and <a className="font-semibold text-primary underline underline-offset-2" href="/legal/cookie-policy">Cookie Policy</a>.
                     </p>
                   </div>
                 </div>
@@ -209,7 +243,7 @@ export function CookieConsent({ initiallyOpen = false }: { initiallyOpen?: boole
                     <Toggle k="essential" label="Essential" desc="Login sessions, security, consent choices, form progress, lead delivery, duplicate prevention and saved preferences." locked />
                     <Toggle k="prefill" label="Personalisation (prefill)" desc="Remember your name, mobile, state and city so forms are auto-filled." />
                     <Toggle k="analytics" label="Analytics" desc="Help us understand which pages and tools work best." />
-                    <Toggle k="marketing" label="Marketing" desc="Show counselling offers most relevant to your interests." />
+                    <Toggle k="marketing" label="Marketing & advertising" desc="Load advertising, measure campaigns and show offers that may be more relevant to your interests." />
                   </motion.div>
                 )}
               </AnimatePresence>

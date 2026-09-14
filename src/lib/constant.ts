@@ -3,6 +3,8 @@ export const SITE_CONFIG = {
   domain: "sarkari.dekhocampus.com",
   scheme: "https",
   supportEmail: "outreach@dekhocampus.com",
+  supportPhone: "+918010321712",
+  supportPhoneDisplay: "+91 80103 21712",
   searchPath: "/",
   ogImagePath: "/icon-512.png",
   compactLogoPath: "/brand/dc-logo.webp",

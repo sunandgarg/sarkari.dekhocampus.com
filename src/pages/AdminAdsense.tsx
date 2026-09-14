@@ -15,6 +15,12 @@ import { Save, Eye, MousePointerClick, TrendingUp, Settings as SettingsIcon, Meg
 import { useDraftState } from "@/hooks/useDraftState";
 
 /* ---------- Tab 1: Setup ---------- */
+function clientIdFromPublisher(value: unknown) {
+  const publisherId = String(value || "").trim();
+  if (!publisherId) return "";
+  return publisherId.startsWith("ca-") ? publisherId : `ca-${publisherId}`;
+}
+
 function SetupTab() {
   const [row, setRow] = useDraftState<any>('admin.adsense.row.v1', null);
   const [saving, setSaving] = useState(false);
@@ -43,15 +49,12 @@ function SetupTab() {
     if (!row) return;
     setSaving(true);
     const { id, created_at, updated_at, ...payload } = row;
-    // Auto-derive client_id from publisher_id if missing
-    if (!payload.client_id && payload.publisher_id) {
-      payload.client_id = payload.publisher_id.startsWith("ca-")
-        ? payload.publisher_id
-        : `ca-${payload.publisher_id}`;
-    }
-    if (!payload.verification_meta && payload.client_id) {
-      payload.verification_meta = payload.client_id;
-    }
+    // The visible publisher field is authoritative. Always synchronize its
+    // derived values so editing an account cannot leave a stale client ID live.
+    const publisherId = String(payload.publisher_id || "").trim();
+    payload.publisher_id = publisherId;
+    payload.client_id = clientIdFromPublisher(publisherId);
+    payload.verification_meta = payload.client_id;
     const { error } = await (backendClient as any)
       .from("adsense_settings")
       .update(payload)
@@ -106,11 +109,11 @@ function SetupTab() {
           <div className="grid md:grid-cols-2 gap-3 mt-3">
             <div>
               <Label>Client ID (auto-filled)</Label>
-              <Input value={row.client_id || ""} onChange={(e) => upd("client_id", e.target.value)} placeholder="ca-pub-..." />
+              <Input value={clientIdFromPublisher(row.publisher_id)} readOnly aria-readonly="true" placeholder="ca-pub-..." />
             </div>
             <div>
               <Label>Verification meta (auto-filled)</Label>
-              <Input value={row.verification_meta || ""} onChange={(e) => upd("verification_meta", e.target.value)} placeholder="ca-pub-..." />
+              <Input value={clientIdFromPublisher(row.publisher_id)} readOnly aria-readonly="true" placeholder="ca-pub-..." />
             </div>
           </div>
           <div className="mt-3">
@@ -153,7 +156,7 @@ function SlotsTab() {
           name: "",
           ad_type: "display",
           placement: "homepage",
-          position: "middle",
+          position: "top",
           ad_slot_id: "",
           ad_format: "auto",
           full_width_responsive: true,
@@ -165,8 +168,23 @@ function SlotsTab() {
         fields={[
           { key: "name", label: "Name (your reference)", required: true, placeholder: "Homepage middle banner" },
           { key: "placement", label: "Where to show", type: "combobox", options: ["homepage", "article", "search", "study", "course", "exam", "college-detail", "sidebar", "footer", "header"] },
-          { key: "position", label: "Position on page", type: "combobox", options: ["top", "middle", "bottom", "before-content", "after-content"] },
+          { key: "position", label: "Position on page", type: "combobox", options: [
+            "top",
+            "after-latest-jobs",
+            "after-admit-cards",
+            "after-positions",
+            "after-department",
+            "bottom",
+            "after-intro",
+            "after-overview",
+            "after-selection",
+            "after-important-dates",
+            "after-important-links",
+            "before-related",
+          ] },
           { key: "ad_slot_id", label: "AdSense Slot ID (optional)", placeholder: "1234567890" },
+          { key: "min_width", label: "Minimum viewport width (optional)", type: "number", placeholder: "0" },
+          { key: "min_height", label: "Reserved height in pixels (optional)", type: "number", placeholder: "250" },
           { key: "url_pattern", label: "Limit to URLs containing (optional)", placeholder: "/colleges" },
           { key: "priority", label: "Priority (higher wins)", type: "number" },
         ]}
@@ -177,7 +195,7 @@ function SlotsTab() {
 
 /* ---------- Tab 3: Stats ---------- */
 function StatsTab() {
-  const [stats, setStats] = useState<{ impressions: number; clicks: number; ctr: number; top: any[] } | null>(null);
+  const [stats, setStats] = useState<{ slotRequests: number; legacyImpressions: number; legacyClicks: number; top: any[] } | null>(null);
   useEffect(() => {
     (async () => {
       const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -186,15 +204,14 @@ function StatsTab() {
         .select("event_type, ad_unit_id")
         .gte("created_at", since);
       const events = data || [];
-      const impressions = events.filter((e: any) => e.event_type === "impression").length;
-      const clicks = events.filter((e: any) => e.event_type === "click").length;
-      const ctr = impressions ? (clicks / impressions) * 100 : 0;
-      const byUnit: Record<string, { impressions: number; clicks: number }> = {};
+      const slotRequests = events.filter((e: any) => e.event_type === "slot_request").length;
+      const legacyImpressions = events.filter((e: any) => e.event_type === "impression").length;
+      const legacyClicks = events.filter((e: any) => e.event_type === "click").length;
+      const byUnit: Record<string, { slotRequests: number }> = {};
       events.forEach((e: any) => {
-        if (!e.ad_unit_id) return;
-        byUnit[e.ad_unit_id] = byUnit[e.ad_unit_id] || { impressions: 0, clicks: 0 };
-        if (e.event_type === "impression") byUnit[e.ad_unit_id].impressions++;
-        else if (e.event_type === "click") byUnit[e.ad_unit_id].clicks++;
+        if (!e.ad_unit_id || e.event_type !== "slot_request") return;
+        byUnit[e.ad_unit_id] = byUnit[e.ad_unit_id] || { slotRequests: 0 };
+        byUnit[e.ad_unit_id].slotRequests++;
       });
       const ids = Object.keys(byUnit);
       const names: Record<string, string> = {};
@@ -204,18 +221,18 @@ function StatsTab() {
       }
       const top = Object.entries(byUnit)
         .map(([id, v]) => ({ id, name: names[id] || id.slice(0, 8), ...v }))
-        .sort((a, b) => b.impressions - a.impressions)
+        .sort((a, b) => b.slotRequests - a.slotRequests)
         .slice(0, 10);
-      setStats({ impressions, clicks, ctr, top });
+      setStats({ slotRequests, legacyImpressions, legacyClicks, top });
     })();
   }, []);
 
   if (!stats) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
   const tiles = [
-    { label: "Impressions (30 days)", value: stats.impressions, icon: Eye },
-    { label: "Clicks (30 days)", value: stats.clicks, icon: MousePointerClick },
-    { label: "Click rate", value: `${stats.ctr.toFixed(2)}%`, icon: TrendingUp },
+    { label: "Slot requests (30 days)", value: stats.slotRequests, icon: Eye },
+    { label: "Legacy reported impressions", value: stats.legacyImpressions, icon: TrendingUp },
+    { label: "Legacy reported clicks", value: stats.legacyClicks, icon: MousePointerClick },
   ];
 
   return (
@@ -237,13 +254,13 @@ function StatsTab() {
             {stats.top.map((u) => (
               <div key={u.id} className="flex items-center justify-between text-sm border-b py-2 last:border-0">
                 <span className="font-medium">{u.name}</span>
-                <span className="text-muted-foreground">{u.impressions} views · {u.clicks} clicks</span>
+                <span className="text-muted-foreground">{u.slotRequests} slot requests</span>
               </div>
             ))}
           </div>
         )}
         <p className="text-xs text-muted-foreground mt-4">
-          Need official earnings data? Sign in to{" "}
+          A slot request means this site asked Google to render a configured unit; it is not proof of fill, viewability, an impression or a click. For official delivery and earnings data, sign in to{" "}
           <a href="https://www.google.com/adsense" target="_blank" rel="noopener noreferrer" className="underline">Google AdSense</a>.
         </p>
       </Card>

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { SARKARI_NAV } from "./SarkariHeader";
 import { SITE_CONFIG } from "@/lib/constant";
 import { openCookieSettings } from "@/lib/promptSequence";
+import { SARKARI_LEGAL_PAGES } from "@/lib/sarkariLegal";
 
 declare const __APP_BUILD_YEAR__: number;
 
@@ -23,7 +24,13 @@ export function SarkariFooter() {
           </div>
         </div>
         <div>
-          <h3>Important notice</h3>
+          <h3>Legal, corrections and contact</h3>
+          <nav className="sarkari-footer-links" aria-label="Legal policies">
+            {SARKARI_LEGAL_PAGES.map((page) => <Link key={page.slug} to={page.path}>{page.shortTitle}</Link>)}
+            <a href={`mailto:${SITE_CONFIG.supportEmail}`}>{SITE_CONFIG.supportEmail}</a>
+            <a href={`tel:${SITE_CONFIG.supportPhone}`}>{SITE_CONFIG.supportPhoneDisplay}</a>
+          </nav>
+          <h3 className="mt-4">Important notice</h3>
           <p>This is an independent information portal and is not affiliated with any government organisation. Always verify information on the official authority website.</p>
         </div>
       </div>

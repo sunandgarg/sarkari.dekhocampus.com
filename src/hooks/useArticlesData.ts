@@ -44,7 +44,14 @@ const publicArticlesQuery = (fields = PUBLIC_ARTICLE_LIST_FIELDS) =>
     .eq("status", "Published")
     .eq("is_active", true);
 
-const rowsFrom = (data: unknown) => (Array.isArray(data) ? data : []) as DbArticle[];
+const rowsFrom = (data: unknown): DbArticle[] => (Array.isArray(data) ? data : [])
+  .flatMap((row) => {
+    if (!row || typeof row !== "object" || Array.isArray(row)) return [];
+    const slug = (row as Record<string, unknown>).slug;
+    if (typeof slug !== "string") return [];
+    const article = validatePublicSarkariArticle(row, slug);
+    return article ? [article] : [];
+  });
 
 /**
  * Bounded compatibility feed for legacy public components. New homepage and

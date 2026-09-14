@@ -8,9 +8,11 @@ import { OptionalIntegrationBoundary } from "@/components/OptionalIntegrationBou
 import { useDeferredOptionalRuntime } from "@/hooks/useDeferredOptionalRuntime";
 import { SITE_URL } from "@/lib/constant";
 import { lazyRetry } from "@/lib/lazyRetry";
+import { isSarkariLegalPath, SARKARI_LEGAL_PAGES } from "@/lib/sarkariLegal";
 import Index from "./pages/Index";
 
 const ArticleDetail = lazyRetry(() => import("./pages/ArticleDetail"), "ArticleDetail");
+const SarkariLegalPage = lazyRetry(() => import("./pages/SarkariLegalPage"), "SarkariLegalPage");
 const SarkariNotFound = lazyRetry(() => import("./pages/SarkariNotFound"), "SarkariNotFound");
 const SiteIntegrations = lazyRetry(() => import("@/components/SiteIntegrations").then((module) => ({ default: module.SiteIntegrations })), "SiteIntegrations");
 const AdsenseLoader = lazyRetry(() => import("@/components/ads/AdsenseLoader").then((module) => ({ default: module.AdsenseLoader })), "AdsenseLoader");
@@ -39,7 +41,7 @@ function NewsArchiveRedirect() {
 function RouteSeoPolicy() {
   const { pathname } = useLocation();
   useEffect(() => {
-    const knownPublicRoute = pathname === "/" || pathname === "/news" || pathname.startsWith("/news/") || pathname.startsWith("/articles");
+    const knownPublicRoute = pathname === "/" || pathname === "/news" || pathname.startsWith("/news/") || pathname.startsWith("/articles") || isSarkariLegalPath(pathname);
     const privateRoute = pathname.startsWith("/admin") || pathname === "/auth" || !knownPublicRoute;
     let robots = document.querySelector('meta[name="robots"]') as HTMLMetaElement | null;
     if (!robots) {
@@ -95,6 +97,9 @@ export function AppRuntime() {
             <Route path="/news/:slug" element={<ArticleDetail />} />
             <Route path="/articles" element={<LegacyArticleRoute />} />
             <Route path="/articles/:slug" element={<LegacyArticleRoute />} />
+            {SARKARI_LEGAL_PAGES.map((page) => (
+              <Route key={page.slug} path={page.path} element={<SarkariLegalPage slug={page.slug} />} />
+            ))}
             <Route path="*" element={<SarkariNotFound />} />
           </Routes>
         </Suspense>

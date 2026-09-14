@@ -54,6 +54,7 @@ scripts/*
 !scripts/generate-brand-icons.mjs
 !scripts/generate-sitemap.ts
 !scripts/prerender-home.ts
+!scripts/prerender-legal.ts
 !scripts/check-home-prerender.mjs
 !scripts/apply-home-critical-css.mjs
 

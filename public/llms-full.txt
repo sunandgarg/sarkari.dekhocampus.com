@@ -14,6 +14,14 @@
 - Scholarships: https://sarkari.dekhocampus.com/?category=Scholarships
 - XML sitemap: https://sarkari.dekhocampus.com/sitemap.xml
 
+## Policies and accountability
+
+- Privacy Policy: https://sarkari.dekhocampus.com/legal/privacy-policy
+- Cookie Policy: https://sarkari.dekhocampus.com/legal/cookie-policy
+- Terms of Use: https://sarkari.dekhocampus.com/legal/terms-of-service
+- Independence and Information Disclaimer: https://sarkari.dekhocampus.com/legal/disclaimer
+- Editorial, Corrections and Takedown Policy: https://sarkari.dekhocampus.com/legal/editorial-corrections
+
 ## Content model
 
 - Public article pages use canonical URLs in the form https://sarkari.dekhocampus.com/news/{slug}.
@@ -34,3 +42,4 @@
 ## Contact
 
 - Email: outreach@dekhocampus.com
+- Phone: +91 80103 21712

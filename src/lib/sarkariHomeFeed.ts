@@ -1,4 +1,9 @@
 import { SARKARI_CATEGORIES, type SarkariCategory } from "./sarkariCategories";
+import {
+  containsBlockedPublicSource,
+  stripVisibleArticleSources,
+  stripVisibleSourceBrands,
+} from "./articleContentSanitizer";
 
 export const SARKARI_HOME_FEED_VERSION = 1 as const;
 export const SARKARI_HOME_FEED_MAX_ITEMS = 9;
@@ -47,12 +52,24 @@ function parseCard(value: unknown, expectedCategory?: SarkariCategory): SarkariH
   const category = value.category;
   const createdAt = boundedString(value.createdAt, 40, true);
   if (!id || !slug || !title || description === undefined || !createdAt) return undefined;
+  if (containsBlockedPublicSource(id)) return undefined;
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return undefined;
+  if (containsBlockedPublicSource(slug)) return undefined;
   if (!(SARKARI_CATEGORIES as readonly unknown[]).includes(category)) return undefined;
   if (expectedCategory && category !== expectedCategory) return undefined;
   const parsedDate = new Date(createdAt);
   if (Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString() !== createdAt) return undefined;
-  return { id, slug, title, description, category: category as SarkariCategory, createdAt };
+  const publicTitle = stripVisibleSourceBrands(title);
+  const publicDescription = stripVisibleArticleSources(description);
+  if (!publicTitle) return undefined;
+  return {
+    id,
+    slug,
+    title: publicTitle,
+    description: publicDescription,
+    category: category as SarkariCategory,
+    createdAt,
+  };
 }
 
 function parseCardList(value: unknown, expectedCategory?: SarkariCategory) {

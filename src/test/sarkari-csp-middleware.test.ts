@@ -13,6 +13,11 @@ describe("Sarkari Pages CSP middleware", () => {
     const nonce = csp.match(/'nonce-([^']+)'/)?.[1];
     expect(nonce).toMatch(/^[a-f0-9]{32}$/);
     expect(csp).toContain("'strict-dynamic'");
+    expect(csp).not.toContain("'unsafe-eval'");
+    expect(csp).toContain("https://aws-origin.dekhocampus.com");
+    expect(csp).toContain("https://*.googlesyndication.com");
+    expect(csp).not.toMatch(/connect-src 'self' https:\s+wss:(?:;|\s)/);
+    expect(csp).not.toMatch(/frame-src 'self' https:(?:;|\s)/);
     expect(csp).toContain("script-src-attr 'none'");
     const html = await response.text();
     expect(html.match(new RegExp(`nonce="${nonce}"`, "g"))).toHaveLength(4);

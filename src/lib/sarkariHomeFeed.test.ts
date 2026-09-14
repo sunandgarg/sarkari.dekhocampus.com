@@ -40,6 +40,8 @@ describe("Sarkari homepage feed boundary", () => {
     for (const mutation of [
       { slug: "Not-Canonical" },
       { slug: "unsafe/path" },
+      { slug: "railway-govt-job-guru" },
+      { id: "sarkari-result-card" },
       { createdAt: "yesterday" },
       { title: "" },
       { description: null },
@@ -73,5 +75,18 @@ describe("Sarkari homepage feed boundary", () => {
 
     const valid = new Response(JSON.stringify(feed()), { headers: { "Content-Type": "application/json" } });
     await expect(readBoundedSarkariHomeFeed(valid)).resolves.toEqual(feed());
+  });
+
+  it("removes discovery-source names before cards reach the edge cache or homepage", () => {
+    const candidate = feed();
+    candidate.latest[0] = {
+      ...candidate.latest[0],
+      title: "Railway Clerk via Sarkari Result",
+      description: "Credit: govt-job-guru.in",
+    };
+    const parsed = parseSarkariHomeFeed(candidate);
+    expect(parsed?.latest[0].title).toBe("Railway Clerk");
+    expect(parsed?.latest[0].description).toBe("");
+    expect(JSON.stringify(parsed)).not.toMatch(/sarkari[ ._-]*result|govt[ ._-]*job[ ._-]*guru/i);
   });
 });

@@ -9,10 +9,10 @@
  * the `intent_merge_visitor` RPC to roll their history into the user record.
  */
 import { backendClient } from "@/integrations/backend/client";
+import { readCookiePreferences } from "@/lib/cookiePreferences";
 
 const VISITOR_KEY  = "dc_intent_visitor_v1";
 const SESSION_KEY  = "dc_session_id";
-const CONSENT_KEY  = "dc_cookie_consent_v1";
 
 // ------------------------------------------------------------------
 // Event taxonomy (mirrors intent_event_weights.event_type)
@@ -39,12 +39,9 @@ export interface IntentProps {
 // ------------------------------------------------------------------
 // Consent + visitor id
 // ------------------------------------------------------------------
-function tracking_allowed(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    const c = localStorage.getItem(CONSENT_KEY);
-    return c !== "rejected"; // allow undecided + accepted (matches existing UserTracking)
-  } catch { return true; }
+export function intentTrackingAllowed(): boolean {
+  const preferences = readCookiePreferences();
+  return preferences.resolved && preferences.analytics;
 }
 
 function ensureUuid(): string {
@@ -59,7 +56,7 @@ function ensureUuid(): string {
 }
 
 export function getVisitorId(): string {
-  if (typeof window === "undefined") return "ssr";
+  if (typeof window === "undefined" || !intentTrackingAllowed()) return "";
   try {
     let id = localStorage.getItem(VISITOR_KEY);
     if (!id) {
@@ -121,6 +118,10 @@ let flushTimer: any = null;
 async function flush() {
   flushTimer = null;
   if (!queue.length) return;
+  if (!intentTrackingAllowed()) {
+    queue.splice(0, queue.length);
+    return;
+  }
   const batch = queue.splice(0, queue.length);
   try { await (backendClient as any).from("intent_events").insert(batch); }
   catch (_) { /* swallow - never block UI */ }
@@ -129,10 +130,21 @@ async function flush() {
 let currentUserId: string | null = null;
 export function setIntentUserId(uid: string | null) { currentUserId = uid; }
 
+export function clearIntentTrackingQueue() {
+  queue.splice(0, queue.length);
+  if (flushTimer) clearTimeout(flushTimer);
+  flushTimer = null;
+}
+
+export function clearIntentTrackingState() {
+  clearIntentTrackingQueue();
+  try { localStorage.removeItem(VISITOR_KEY); } catch { /* noop */ }
+}
+
 /** Fire-and-forget intent capture. Safe to call from anywhere. */
 export function trackIntent(event_type: IntentEventType, props: IntentProps = {}) {
   if (typeof window === "undefined") return;
-  if (!tracking_allowed()) return;
+  if (!intentTrackingAllowed()) return;
 
   const utm = getUtm();
   const row: any = {

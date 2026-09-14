@@ -111,6 +111,23 @@ describe("Sarkari article Pages Function", () => {
     expect(JSON.parse(schemaText).articleBody).toHaveLength(12_000);
   });
 
+  it("strips discovery-source names from metadata, schema, noscript and bootstrap", () => {
+    const html = renderArticleHtml(template, {
+      ...article,
+      title: "Railway Clerk via Sarkari Result",
+      description: "Details from govt-job-guru.in",
+      content: "<p>Official details.</p><p>Credit: Govt Job Guru</p>",
+      author: "sarkari-result.com",
+      tags: ["Railway", "Sarkari Result"],
+      meta_title: "Railway Clerk | GovtJobGuru",
+      meta_description: "According to Sarkari Result",
+      meta_keywords: "railway, govt job guru",
+    });
+
+    expect(html).toContain("Railway Clerk");
+    expect(html).not.toMatch(/sarkari[ ._-]*result|govt[ ._-]*job[ ._-]*guru/i);
+  });
+
   it("describes the compact DC mark when it is used as the article fallback image", () => {
     const html = renderArticleHtml(template, { ...article, featured_image: "" });
     expect(html).toContain('property="og:image" content="https://sarkari.dekhocampus.com/icon-512.png"');

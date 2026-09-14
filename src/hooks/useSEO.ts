@@ -95,6 +95,7 @@ export function useSEO({
     }
 
     const nonce = document.querySelector<HTMLScriptElement>("script[nonce]")?.nonce || "";
+    document.getElementById("ld-json-legal")?.remove();
     document.getElementById("ld-json-page")?.remove();
     if (jsonLdKey !== "null") {
       const script = document.createElement("script");
@@ -107,6 +108,8 @@ export function useSEO({
 
     return () => {
       document.title = "Sarkari DekhoCampus - Latest Jobs, Results & Admit Cards";
+      document.getElementById("ld-json-legal")?.remove();
+      document.getElementById("ld-json-page")?.remove();
     };
   }, [title, description, keywords, canonical, ogImage, ogImageAlt, ogType, twitterCard, jsonLdKey, noIndex, enabled]);
 }

@@ -169,7 +169,6 @@ export function LeadCaptureForm({
         setLeadConsentPreference(authorized);
         savePrefillCookie({ name: formData.name, email: formData.email, phone: formData.phone, state: formData.state, city: formData.city });
         markLeadSubmitted();
-        try { (window as any).fireGoogleAdsConversion?.({ value: 1, currency: "INR", source }); } catch {}
         trackLeadConversion({ source, variant, has_email: !!formData.email, has_phone: !!formData.phone });
         trackEvent("lead_form_submit_success", { source, variant });
         onSuccess?.();
@@ -359,7 +358,7 @@ export function LeadCaptureForm({
             </div>
           </div>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-2.5">
+        <form onSubmit={handleSubmit} className="space-y-2.5" data-clarity-mask="true">
           {renderTwoStepFields()}
         </form>
         {otpPortal}
@@ -371,14 +370,14 @@ export function LeadCaptureForm({
   if (variant === "banner") {
     if (simple) {
       return (
-        <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-br from-slate-900 via-blue-950 to-primary p-5 text-white shadow-2xl md:p-7">
+        <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="overflow-hidden rounded-[28px] border border-white/10 bg-slate-900 p-5 text-white shadow-2xl md:p-7">
           <div className="mx-auto grid max-w-5xl items-center gap-6 lg:grid-cols-[.8fr_1.2fr]">
             <div>
               <span className="inline-flex rounded-full bg-emerald-400/15 px-3 py-1 text-[11px] font-extrabold text-emerald-200 ring-1 ring-emerald-300/20">Personalised guidance with a fast shortlist</span>
               <h3 className="mt-3 text-2xl font-extrabold leading-tight md:text-3xl">Let an expert simplify your decision</h3>
               <p className="mt-2 max-w-md text-sm leading-6 text-white/70">Share only the essentials. We will help you shortlist the right options and next steps.</p>
             </div>
-            <form onSubmit={handleSubmit} className="space-y-2.5">
+            <form onSubmit={handleSubmit} className="space-y-2.5" data-clarity-mask="true">
               {renderTwoStepFields({ dark: true })}
             </form>
           </div>
@@ -398,7 +397,7 @@ export function LeadCaptureForm({
             <IITAlumniBadge />
             <p className="text-primary-foreground/90 text-sm md:text-base mt-2">{subtitle}</p>
           </div>
-          <form onSubmit={handleSubmit} className="w-full max-w-xl mx-auto space-y-2.5">
+          <form onSubmit={handleSubmit} className="w-full max-w-xl mx-auto space-y-2.5" data-clarity-mask="true">
             {renderTwoStepFields({ dark: true })}
           </form>
         </div>
@@ -422,7 +421,7 @@ export function LeadCaptureForm({
           <IITAlumniBadge className="mt-1.5" />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-2">
+        <form onSubmit={handleSubmit} className="space-y-2" data-clarity-mask="true">
           {renderTwoStepFields({ compact: true })}
         </form>
         {otpPortal}
@@ -440,7 +439,7 @@ export function LeadCaptureForm({
         </div>
         {simple ? <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary"><BookOpen className="h-4 w-4" /></span> : <img src={dcLogo} alt="DekhoCampus" className="h-7 w-7 object-contain" />}
       </div>
-      <form onSubmit={handleSubmit} className="space-y-2">
+      <form onSubmit={handleSubmit} className="space-y-2" data-clarity-mask="true">
         {renderTwoStepFields({ compact: true })}
       </form>
       {otpPortal}

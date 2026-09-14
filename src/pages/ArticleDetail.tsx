@@ -1,5 +1,5 @@
 import { useParams, Link, Navigate } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, ArrowUp, BellRing, Bookmark, Calendar, Clock, Eye, Link2, List, Pause, Play, Send, Share2, ShieldCheck, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { SarkariHeader } from "@/components/sarkari/SarkariHeader";
 import { SarkariFooter } from "@/components/sarkari/SarkariFooter";
+import { SarkariAdSlot } from "@/components/sarkari/SarkariAdSlot";
 import { LeadCaptureForm } from "@/components/LeadCaptureForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DeferUntilVisible } from "@/components/DeferUntilVisible";
@@ -26,8 +27,6 @@ import { SARKARI_FAQ_PAGE } from "@/lib/siteScope";
 import { getArticleLoadState } from "@/lib/articleLoadState";
 
 // Heavy below-the-fold components - lazy loaded for faster initial paint
-const DynamicAdBanner = lazyRetry(() => import("@/components/DynamicAdBanner").then(m => ({ default: m.DynamicAdBanner })), "DynamicAdBanner");
-const GoogleAd = lazyRetry(() => import("@/components/ads/GoogleAd").then(m => ({ default: m.GoogleAd })), "GoogleAd");
 const FAQSection = lazyRetry(() => import("@/components/FAQSection").then(m => ({ default: m.FAQSection })), "FAQSection");
 
 const SAVED_ARTICLES_KEY = "sarkari_saved_articles_v1";
@@ -37,6 +36,55 @@ function slugifyHeading(s: string) {
 }
 function normalizeSlug(s: string) {
   return s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+type ArticleAdPosition = "after-overview" | "after-selection" | "after-important-dates" | "after-important-links";
+type ArticleContentSegment =
+  | { type: "html"; value: string }
+  | { type: "doc"; title: string; images: string[] };
+type AdAwareArticleContentSegment =
+  | { type: "html"; value: string; adPosition?: ArticleAdPosition }
+  | { type: "doc"; title: string; images: string[] };
+
+function articleAdPlacementClass(position: ArticleAdPosition) {
+  return `sarkari-ad-placement sarkari-ad-placement--${position === "after-important-links" ? "rectangle" : "wide"}`;
+}
+
+function adPositionAfterHeading(heading: string): ArticleAdPosition | undefined {
+  const normalized = heading.replace(/<[^>]+>/g, " ").replace(/&nbsp;/gi, " ").replace(/\s+/g, " ").trim().toLowerCase();
+  if (/\boverview\b/.test(normalized)) return "after-overview";
+  if (/\bselection(?: procedure| process)?\b/.test(normalized)) return "after-selection";
+  if (/\bimportant dates?\b/.test(normalized)) return "after-important-dates";
+  if (/\bimportant links?\b|\bofficial links?\b/.test(normalized)) return "after-important-links";
+  return undefined;
+}
+
+function splitHtmlForAds(value: string) {
+  const headings = Array.from(value.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/gi));
+  if (!headings.length) return [{ value }];
+  const sections: Array<{ value: string; adPosition?: ArticleAdPosition }> = [];
+  const firstIndex = headings[0].index ?? 0;
+  if (firstIndex > 0) sections.push({ value: value.slice(0, firstIndex) });
+  headings.forEach((heading, index) => {
+    const start = heading.index ?? 0;
+    const end = headings[index + 1]?.index ?? value.length;
+    sections.push({ value: value.slice(start, end), adPosition: adPositionAfterHeading(heading[1]) });
+  });
+  return sections;
+}
+
+function splitMarkdownForAds(value: string) {
+  const headings = Array.from(value.matchAll(/^##\s+(.+?)\s*$/gm));
+  if (!headings.length) return [{ value }];
+  const sections: Array<{ value: string; adPosition?: ArticleAdPosition }> = [];
+  const firstIndex = headings[0].index ?? 0;
+  if (firstIndex > 0) sections.push({ value: value.slice(0, firstIndex) });
+  headings.forEach((heading, index) => {
+    const start = heading.index ?? 0;
+    const end = headings[index + 1]?.index ?? value.length;
+    sections.push({ value: value.slice(start, end), adPosition: adPositionAfterHeading(heading[1]) });
+  });
+  return sections;
 }
 
 export default function ArticleDetail() {
@@ -194,7 +242,7 @@ export default function ArticleDetail() {
     });
     html = html.replace(/<table(\s[^>]*)?>([\s\S]*?)<\/table>/gi, (m) => `<div class="table-wrap">${m}</div>`);
     // Parse out doc-viewer blocks
-    const segs: Array<{ type: "html"; value: string } | { type: "doc"; title: string; images: string[] }> = [];
+    const segs: ArticleContentSegment[] = [];
     const re = /<div\s+class="doc-viewer"([^>]*)>([\s\S]*?)<\/div>/gi;
     let last = 0; let m: RegExpExecArray | null;
     while ((m = re.exec(html))) {
@@ -215,6 +263,16 @@ export default function ArticleDetail() {
     if (!contentSegments) return article?.content || "";
     return contentSegments.filter((s) => s.type === "html").map((s: any) => s.value).join("");
   }, [contentSegments, article?.content]);
+  const adAwareContentSegments = useMemo(() => {
+    if (!contentSegments) return null;
+    return contentSegments.flatMap<AdAwareArticleContentSegment>((segment) => segment.type === "html"
+      ? splitHtmlForAds(segment.value).map((part): AdAwareArticleContentSegment => ({ type: "html", ...part }))
+      : [segment]);
+  }, [contentSegments]);
+  const markdownAdSections = useMemo(
+    () => article?.content && !article.content.trim().startsWith("<") ? splitMarkdownForAds(article.content) : [],
+    [article?.content],
+  );
 
   if (needsRedirect) return <Navigate to={`/news/${cleanSlug}`} replace />;
 
@@ -375,19 +433,31 @@ export default function ArticleDetail() {
                 <figure className="sarkari-detail-image sarkari-job-image"><img src={article.image} alt={article.title} width="1200" height="675" fetchPriority="high" decoding="async" /></figure>
               )}
 
+              <SarkariAdSlot placement="article" position="after-intro" pageKey="article" category={article.category} className="sarkari-ad-placement sarkari-ad-placement--rectangle" />
+
               <motion.section id="article-content" initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduceMotion ? 0 : 0.24 }} className="sarkari-content-card sarkari-job-content">
                 {article.content?.trim().startsWith("<") ? (
-                  contentSegments ? (
-                    <>{contentSegments.map((segment, index) => segment.type === "html" ? <RichText key={index} html={segment.value} className="article-prose article-prose--news max-w-none" /> : <DocumentViewer key={index} title={segment.title} images={segment.images} />)}</>
+                  adAwareContentSegments ? (
+                    <>{adAwareContentSegments.map((segment, index) => segment.type === "html" ? (
+                      <Fragment key={index}>
+                        <RichText html={segment.value} className="article-prose article-prose--news max-w-none" />
+                        {segment.adPosition && <SarkariAdSlot placement="article" position={segment.adPosition} pageKey="article" category={article.category} className={articleAdPlacementClass(segment.adPosition)} />}
+                      </Fragment>
+                    ) : <DocumentViewer key={index} title={segment.title} images={segment.images} />)}</>
                   ) : <RichText html={htmlContent} className="article-prose article-prose--news max-w-none" />
                 ) : (
-                  <div className="article-prose article-prose--news max-w-none">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
-                      h2: ({ children, ...props }) => <h2 id={slugifyHeading(String(children))} {...props}>{children}</h2>,
-                      h3: ({ children, ...props }) => <h3 id={slugifyHeading(String(children))} {...props}>{children}</h3>,
-                      table: ({ children, ...props }) => <div className="table-wrap" role="region" aria-label="Scrollable article table" tabIndex={0}><table {...props}>{children}</table></div>,
-                    }}>{article.content}</ReactMarkdown>
-                  </div>
+                  <>{markdownAdSections.map((section, index) => (
+                    <Fragment key={index}>
+                      <div className="article-prose article-prose--news max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
+                          h2: ({ children, ...props }) => <h2 id={slugifyHeading(String(children))} {...props}>{children}</h2>,
+                          h3: ({ children, ...props }) => <h3 id={slugifyHeading(String(children))} {...props}>{children}</h3>,
+                          table: ({ children, ...props }) => <div className="table-wrap" role="region" aria-label="Scrollable article table" tabIndex={0}><table {...props}>{children}</table></div>,
+                        }}>{section.value}</ReactMarkdown>
+                      </div>
+                      {section.adPosition && <SarkariAdSlot placement="article" position={section.adPosition} pageKey="article" category={article.category} className={articleAdPlacementClass(section.adPosition)} />}
+                    </Fragment>
+                  ))}</>
                 )}
                 <div className="sarkari-official-reminder"><ShieldCheck /><p><strong>Before you act:</strong> confirm every date, vacancy, fee, eligibility rule and download link on the recruiting authority&apos;s official website.</p></div>
                 {article.tags.length > 0 && <ArticleTagCloud tags={article.tags} />}
@@ -398,7 +468,6 @@ export default function ArticleDetail() {
                 <LeadCaptureForm variant="inline" simple hideProgramMode title="Request relevant update alerts" subtitle="No application fee is collected by Sarkari DekhoCampus." source={`sarkari_article_after_content_${article.slug}`} interestLabel="Target exam or job" interestOptions={Array.from(new Set([article.category, ...article.tags])).slice(0, 10)} consentPurpose="government job and exam update guidance" successMessage="Your update preferences have been saved." />
               </details>
 
-              <DeferUntilVisible minHeight={120}><div className="mt-8"><DynamicAdBanner variant="horizontal" position="mid-page" page="articles" itemSlug={cleanSlug} /></div></DeferUntilVisible>
               <DeferUntilVisible minHeight={300}>
                 <div className="sarkari-detail-faq">
                   <FAQSection page={SARKARI_FAQ_PAGE} itemSlug={cleanSlug} title="Frequently Asked Questions" fallback={[
@@ -409,6 +478,7 @@ export default function ArticleDetail() {
                   ]} />
                 </div>
               </DeferUntilVisible>
+              <SarkariAdSlot placement="article" position="before-related" pageKey="article" category={article.category} className="sarkari-ad-placement sarkari-ad-placement--wide" />
               {recommendations.length > 0 && (
                 <section className="sarkari-related sarkari-job-related" aria-labelledby="related-title">
                   <div className="sarkari-related-heading sarkari-job-related-heading"><div><span>Continue exploring</span><h2 id="related-title">More {article.category.toLowerCase()} updates</h2></div><Link to={`/?category=${encodeURIComponent(article.category)}`}>View all <ArrowRight /></Link></div>
@@ -529,12 +599,6 @@ export default function ArticleDetail() {
           </div>
         </div>
       </div>
-
-
-
-      <DeferUntilVisible minHeight={200}>
-        <div className="container max-w-4xl"><GoogleAd placement="article" position="after-content" pageKey="article" className="my-6" /></div>
-      </DeferUntilVisible>
       <SarkariFooter />
     </div>
   );

@@ -3,24 +3,19 @@ import { useLocation } from "react-router-dom";
 import { backendClient } from "@/integrations/backend/client";
 import { useAuth } from "@/hooks/useAuth";
 import { restUrl } from "@/lib/backendMode";
+import { readCookiePreferences } from "@/lib/cookiePreferences";
+import { useCookiePreferences } from "@/hooks/useCookiePreferences";
 
 const SESSION_KEY = "dc_session_id";
 const SESSION_STARTED_KEY = "dc_session_started";
 const ENTRY_KEY = "dc_session_entry";
-const CONSENT_KEY = "dc_cookie_consent_v1";
 const PREFS_KEY = "dc_cookie_prefs_v1";
 const PROFILE_KEY = "dc_user_prefill_v1";
 const SESSION_TTL_MS = 30 * 60 * 1000;
 
 function analyticsEnabled(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    const consent = localStorage.getItem(CONSENT_KEY);
-    if (!consent) return false; // no decision yet - be safe
-    if (consent === "rejected") return false;
-    const prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}");
-    return prefs.analytics !== false;
-  } catch { return false; }
+  const preferences = readCookiePreferences();
+  return preferences.resolved && preferences.analytics;
 }
 
 function getOrCreateSession(): string {
@@ -79,6 +74,10 @@ function enqueue(event: any) {
 async function flush() {
   flushTimer = null;
   if (!queue.length) return;
+  if (!analyticsEnabled()) {
+    queue.splice(0, queue.length);
+    return;
+  }
   const batch = queue.splice(0, queue.length);
   try { await (backendClient as any).from("user_events").insert(batch); } catch {}
 }
@@ -98,7 +97,8 @@ if (typeof window !== "undefined") {
 export function UserTrackingProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { user } = useAuth();
-  const sessionIdRef = useRef<string>(getOrCreateSession());
+  const preferences = useCookiePreferences();
+  const sessionIdRef = useRef<string>("");
   const pageStartRef = useRef<number>(Date.now());
   const lastPathRef = useRef<string>("");
   const maxScrollRef = useRef<number>(0);
@@ -108,7 +108,19 @@ export function UserTrackingProvider({ children }: { children: React.ReactNode }
 
   // Page navigation tracking
   useEffect(() => {
-    if (!analyticsEnabled()) return;
+    if (!preferences.resolved || !preferences.analytics) {
+      queue.splice(0, queue.length);
+      if (flushTimer) clearTimeout(flushTimer);
+      flushTimer = null;
+      sessionIdRef.current = "";
+      try {
+        localStorage.removeItem(SESSION_KEY);
+        localStorage.removeItem(SESSION_STARTED_KEY);
+        localStorage.removeItem(ENTRY_KEY);
+      } catch { /* noop */ }
+      return;
+    }
+    if (!sessionIdRef.current) sessionIdRef.current = getOrCreateSession();
     const path = location.pathname + location.search;
 
     if (lastPathRef.current && lastPathRef.current !== path) {
@@ -160,10 +172,12 @@ export function UserTrackingProvider({ children }: { children: React.ReactNode }
       max_scroll_pct: maxScrollRef.current,
       opt_in: (() => { try { return JSON.parse(localStorage.getItem(PREFS_KEY) || "{}"); } catch { return {}; } })(),
     }, { onConflict: "session_id" }).then(() => {}, () => {});
-  }, [location.pathname, location.search, user?.id]);
+  }, [location.pathname, location.search, preferences.analytics, preferences.resolved, user?.id]);
 
   // Clicks (with coords for heatmap), submits, scroll, copy, visibility, rage
   useEffect(() => {
+    if (!preferences.resolved || !preferences.analytics) return;
+    if (!sessionIdRef.current) sessionIdRef.current = getOrCreateSession();
     const onClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement | null;
       if (!target) return;
@@ -249,7 +263,7 @@ export function UserTrackingProvider({ children }: { children: React.ReactNode }
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("scroll", onScroll);
     };
-  }, [user?.id, location.pathname]);
+  }, [preferences.analytics, preferences.resolved, user?.id, location.pathname]);
 
   return <>{children}</>;
 }

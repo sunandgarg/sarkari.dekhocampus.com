@@ -38,7 +38,8 @@ describe("Sarkari article detail layout (static source assertions)", () => {
     expect(articleSrc).toMatch(/sarkari-detail-alert-optin/);
     expect(articleSrc).toMatch(/sarkari_article_after_content_/);
     expect((articleSrc.match(/<LeadCaptureForm/g) || [])).toHaveLength(1);
-    expect(articleSrc).toMatch(/DynamicAdBanner/);
+    expect(articleSrc).not.toMatch(/DynamicAdBanner/);
+    expect(articleSrc).toMatch(/SarkariAdSlot/);
     expect(articleSrc).toMatch(/FAQSection/);
     expect(articleSrc).not.toMatch(/<Link[^>]*>\s*<Button/);
   });
@@ -62,11 +63,20 @@ describe("Sarkari article detail layout (static source assertions)", () => {
   });
 
   it("uses semantic detail highlights without adding layout motion", () => {
-    expect(stylesSrc).toMatch(/\.sarkari-job-meta \{[\s\S]*linear-gradient/);
-    expect(stylesSrc).toMatch(/\.sarkari-job-content \.article-prose--news thead \{ background: linear-gradient/);
+    expect(stylesSrc).toMatch(/\.sarkari-job-meta \{[\s\S]*background: #eef2ff/);
+    expect(stylesSrc).toMatch(/\.sarkari-job-content \.article-prose--news thead \{ background: #e8efff/);
     expect(stylesSrc).toMatch(/\.sarkari-official-reminder \{[\s\S]*border-left: 4px solid var\(--sarkari-success-ink\)/);
     expect(stylesSrc).toMatch(/\.sarkari-job-action \{[\s\S]*--sarkari-motion-fast/);
     expect(stylesSrc).not.toMatch(/\.sarkari-job-content[^}]*animation:/);
+  });
+
+  it("provides consent-gated article ad opportunities at each useful content boundary", () => {
+    for (const position of ["after-intro", "after-overview", "after-selection", "after-important-dates", "after-important-links", "before-related"]) {
+      expect(articleSrc).toContain(position);
+    }
+    expect(articleSrc).toMatch(/splitHtmlForAds/);
+    expect(articleSrc).toMatch(/splitMarkdownForAds/);
+    expect(articleSrc).toContain('position === "after-important-links" ? "rectangle" : "wide"');
   });
 
   it("never falls back to hardcoded demo notices", () => {

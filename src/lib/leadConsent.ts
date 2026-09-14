@@ -1,5 +1,5 @@
 export const LEAD_CONSENT_TEXT =
-  "I agree to DekhoCampus Privacy Policy and Terms & Conditions. I may receive admission guidance by call, SMS, WhatsApp or email, and I can opt out anytime.";
+  "I confirm I am at least 18 years old and agree to DekhoCampus Privacy Policy and Terms & Conditions. I may receive admission guidance by call, SMS, WhatsApp or email, and I can opt out anytime.";
 
 const LEAD_CONSENT_PREF_KEY = "dc_lead_consent_terms_v1";
 

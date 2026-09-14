@@ -1,4 +1,5 @@
 import { normalizeSarkariCategory, SARKARI_CATEGORIES, type SarkariCategory } from "./sarkariCategories";
+import { SARKARI_LEGAL_LAST_UPDATED_ISO, SARKARI_LEGAL_PAGES } from "./sarkariLegal";
 
 export const ARTICLE_SITEMAP_PAGE_SIZE = 1_000;
 export const SITEMAP_MAX_URLS_PER_SHARD = 50_000;
@@ -102,6 +103,12 @@ export function buildSarkariFixedSitemapEntries(articleEntries: ArticleSitemapEn
   const activeCategories = new Set(articleEntries.map((entry) => entry.category));
   return [
     { path: "/", changefreq: "hourly", priority: "1.0" },
+    ...SARKARI_LEGAL_PAGES.map((page) => ({
+      path: page.path,
+      lastmod: SARKARI_LEGAL_LAST_UPDATED_ISO,
+      changefreq: "monthly",
+      priority: "0.3",
+    })),
     ...SARKARI_CATEGORIES
       .filter((category) => activeCategories.has(category))
       .map((category) => ({

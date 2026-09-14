@@ -1508,7 +1508,7 @@
   .article-prose--news blockquote {
     margin: 1.6rem 0;
     border-left: 4px solid hsl(var(--primary));
-    background: linear-gradient(135deg, hsl(var(--primary) / 0.06), hsl(var(--accent) / 0.05));
+    background: hsl(var(--primary) / 0.06);
     border-radius: 0 1rem 1rem 0;
     padding: 1rem 1.1rem 1rem 1.25rem;
     color: hsl(215 22% 20%);
@@ -1709,11 +1709,9 @@
 }
 .sarkari-hero h1 em {
   display: inline;
-  background: linear-gradient(90deg, var(--sarkari-accent), var(--sarkari-accent-ink));
-  background-clip: text;
-  color: transparent;
+  background: none;
+  color: #0f172a;
   font-style: normal;
-  -webkit-background-clip: text;
 }
 .sarkari-hero > .sarkari-hero-inner > p {
   max-width: 650px;
@@ -2636,7 +2634,7 @@
   bottom: -1px;
   left: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent 8%, hsl(var(--primary) / .7) 42%, hsl(var(--accent) / .7) 58%, transparent 92%);
+  background: hsl(var(--primary) / .72);
   content: "";
   opacity: .4;
   pointer-events: none;
@@ -2647,27 +2645,16 @@
 .sarkari-menu-button { transition: color var(--sarkari-motion-fast) ease, background-color var(--sarkari-motion-fast) ease, transform var(--sarkari-motion-fast) var(--sarkari-ease-out); }
 
 .sarkari-hero {
-  background:
-    radial-gradient(circle at 12% 18%, hsl(var(--primary) / .09), transparent 32%),
-    radial-gradient(circle at 88% 12%, hsl(var(--accent) / .10), transparent 30%),
-    linear-gradient(180deg, #fff 0%, #f8faff 100%);
+  background: #f8faff;
 }
 .sarkari-eyebrow {
   border-color: hsl(var(--accent) / .28);
-  background: linear-gradient(90deg, hsl(var(--primary) / .08), hsl(var(--accent) / .12));
+  background: #fff4eb;
   color: var(--sarkari-attention-ink);
 }
 .sarkari-hero h1 em { position: relative; display: inline-block; }
 .sarkari-hero h1 em::after {
-  position: absolute;
-  right: 4%;
-  bottom: -.08em;
-  left: 4%;
-  height: .08em;
-  min-height: 3px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, hsl(var(--primary) / .42), hsl(var(--accent) / .58));
-  content: "";
+  display: none;
 }
 .sarkari-search {
   transition: border-color var(--sarkari-motion-ui) ease, box-shadow var(--sarkari-motion-ui) ease, transform var(--sarkari-motion-ui) var(--sarkari-ease-out);
@@ -2689,7 +2676,7 @@
   width: 42px;
   height: 3px;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--sarkari-primary), var(--sarkari-accent));
+  background: var(--sarkari-primary);
   content: "";
 }
 .sarkari-trending-heading h2 {
@@ -2713,8 +2700,8 @@
 .sarkari-trending-card {
   position: relative;
   overflow: hidden;
-  border: 1px solid hsl(var(--primary) / .12);
-  background: linear-gradient(135deg, hsl(var(--primary) / .09), #fff 64%, hsl(var(--accent) / .07));
+  border: 1px solid hsl(var(--destructive) / .28);
+  background: #fff;
   transition: transform var(--sarkari-motion-ui) var(--sarkari-ease-out), border-color var(--sarkari-motion-ui) ease, background-color var(--sarkari-motion-ui) ease, box-shadow var(--sarkari-motion-ui) ease;
 }
 .sarkari-trending-card::before {
@@ -2722,19 +2709,24 @@
   top: 0;
   right: 0;
   left: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--sarkari-primary), var(--sarkari-accent));
+  width: 4px;
+  height: 100%;
+  background: hsl(var(--destructive));
   content: "";
   opacity: .82;
 }
 .sarkari-trending-card:focus-visible .sarkari-trending-number {
-  background: #fff;
-  color: var(--sarkari-primary-dark);
-  box-shadow: 0 0 0 4px hsl(var(--primary) / .13), 0 0 18px hsl(var(--primary) / .30);
+  background: hsl(var(--destructive));
+  color: #fff;
+  box-shadow: 0 0 0 4px hsl(var(--destructive) / .14), 0 0 18px hsl(var(--destructive) / .28);
   transform: scale(1.08);
 }
+.sarkari-trending-number {
+  background: hsl(var(--destructive));
+  color: #fff;
+}
 .sarkari-update-card {
-  background: linear-gradient(90deg, hsl(var(--primary) / .045), #fff 34%);
+  background: #fff;
   transition: transform var(--sarkari-motion-ui) var(--sarkari-ease-out), border-color var(--sarkari-motion-ui) ease, background-color var(--sarkari-motion-ui) ease, box-shadow var(--sarkari-motion-ui) ease;
 }
 .sarkari-update-number {
@@ -2752,10 +2744,10 @@
   display: inline-flex;
   align-items: center;
   padding: 0 6px;
-  border: 1px solid hsl(var(--accent) / .34);
+  border: 1px solid hsl(var(--destructive) / .32);
   border-radius: 999px;
-  background: var(--sarkari-attention-soft);
-  color: var(--sarkari-attention-ink);
+  background: hsl(var(--destructive) / .08);
+  color: hsl(var(--destructive));
   font-size: 9px;
   font-weight: 800;
   line-height: 1;
@@ -2768,13 +2760,13 @@
 }
 
 .sarkari-job-meta {
-  background: linear-gradient(90deg, hsl(var(--primary) / .08), #f8fafc 58%, hsl(var(--accent) / .07));
+  background: #eef2ff;
 }
 .sarkari-job-action {
   transition: transform var(--sarkari-motion-fast) var(--sarkari-ease-out), border-color var(--sarkari-motion-fast) ease, background-color var(--sarkari-motion-fast) ease, color var(--sarkari-motion-fast) ease, box-shadow var(--sarkari-motion-fast) ease;
 }
 .sarkari-job-action .fill-current { color: var(--sarkari-primary); }
-.sarkari-job-content .article-prose--news thead { background: linear-gradient(90deg, hsl(var(--primary) / .16), hsl(var(--accent) / .14)); }
+.sarkari-job-content .article-prose--news thead { background: #e8efff; }
 .sarkari-job-content .article-prose--news tbody tr { transition: background-color var(--sarkari-motion-fast) ease; }
 .sarkari-job-content .article-prose--news td a[target="_blank"],
 .sarkari-job-content .article-prose--news th a[target="_blank"] {
@@ -2784,21 +2776,38 @@
 }
 .sarkari-official-reminder {
   border-left: 4px solid var(--sarkari-success-ink);
-  background: linear-gradient(90deg, var(--sarkari-success-soft), #fff);
+  background: #ecfdf3;
+}
+.sarkari-ad-placement {
+  width: min(1200px, calc(100% - 20px));
+  margin: 20px auto;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  text-align: center;
+}
+.sarkari-ad-placement--rectangle { max-width: 336px; }
+.sarkari-ad-placement--wide { max-width: 1200px; }
+.sarkari-ad-label {
+  display: block;
+  padding: 3px 8px 0;
+  color: #6b7280;
+  font-size: 10px;
+  line-height: 1.4;
+  text-transform: uppercase;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .sarkari-brand:hover .sarkari-brand-picture { transform: translateY(-1px); }
   .sarkari-trending-card:hover {
     transform: translateY(-2px);
-    border-color: hsl(var(--primary) / .28);
-    background: linear-gradient(135deg, hsl(var(--primary) / .13), #fff 64%, hsl(var(--accent) / .10));
-    box-shadow: 0 8px 22px hsl(var(--foreground) / .09);
+    border-color: hsl(var(--destructive) / .52);
+    background: hsl(var(--destructive) / .035);
+    box-shadow: 0 8px 22px hsl(var(--destructive) / .10);
   }
   .sarkari-trending-card:hover .sarkari-trending-number {
-    background: #fff;
-    color: var(--sarkari-primary-dark);
-    box-shadow: 0 0 0 4px hsl(var(--primary) / .13), 0 0 18px hsl(var(--primary) / .30);
+    background: hsl(var(--destructive));
+    color: #fff;
+    box-shadow: 0 0 0 4px hsl(var(--destructive) / .14), 0 0 18px hsl(var(--destructive) / .32);
     transform: scale(1.08);
   }
   .sarkari-trending-carousel .sarkari-carousel-controls button:not(:disabled):hover {
@@ -2809,7 +2818,7 @@
   }
   .sarkari-update-card:hover {
     transform: translateY(-1px);
-    background: linear-gradient(90deg, hsl(var(--primary) / .085), #fff 42%);
+    background: #f4f7ff;
   }
   .sarkari-update-card:hover .sarkari-update-number {
     background: var(--sarkari-primary);
@@ -2819,7 +2828,7 @@
   }
   .sarkari-browse-card:hover {
     transform: translateY(-1px);
-    background: linear-gradient(90deg, hsl(var(--primary) / .07), #fff 68%);
+    background: #f4f7ff;
   }
   .sarkari-browse-card:hover .sarkari-item-icon,
   .sarkari-browse-card:hover .sarkari-state-code { transform: translateY(-1px); }
@@ -2862,6 +2871,7 @@
   .sarkari-trending-heading h2,
   .sarkari-browse-section .sarkari-section-heading h2 { font-size: 22px; }
   .sarkari-trending-heading h2::after { left: 22px; }
+  .sarkari-ad-placement { width: calc(100% - 16px); max-width: 336px; margin-block: 16px; }
 }
 
 @media (max-width: 340px) {

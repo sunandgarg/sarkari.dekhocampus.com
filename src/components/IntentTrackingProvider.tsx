@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { autoTrackRoute, getVisitorId, mergeVisitorIntoUser, setIntentUserId, trackIntent } from "@/lib/intentTracking";
+import { autoTrackRoute, clearIntentTrackingState, getVisitorId, mergeVisitorIntoUser, setIntentUserId, trackIntent } from "@/lib/intentTracking";
 import { backendClient } from "@/integrations/backend/client";
+import { useCookiePreferences } from "@/hooks/useCookiePreferences";
 
 /**
  * Boots the visitor identity, mirrors route changes into intent_events for
@@ -11,12 +12,18 @@ import { backendClient } from "@/integrations/backend/client";
 export function IntentTrackingProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { user } = useAuth();
+  const preferences = useCookiePreferences();
   const mergedFor = useRef<string | null>(null);
   const initialLocation = useRef(`${location.pathname}${location.search}`);
 
   // Ensure visitor row exists once per session
   useEffect(() => {
+    if (!preferences.resolved || !preferences.analytics) {
+      clearIntentTrackingState();
+      return;
+    }
     const vid = getVisitorId();
+    if (!vid) return;
     try {
       (backendClient as any).from("intent_visitors").upsert({
         visitor_id: vid,
@@ -28,19 +35,20 @@ export function IntentTrackingProvider({ children }: { children: React.ReactNode
         utm: Object.fromEntries(new URLSearchParams(initialLocation.current.split("?")[1] || "").entries()),
       }, { onConflict: "visitor_id" }).then(() => {}, () => {});
     } catch { /* noop */ }
-  }, []);
+  }, [preferences.analytics, preferences.resolved]);
 
   // Mirror auth state into the SDK + merge on first sign-in
   useEffect(() => {
     setIntentUserId(user?.id ?? null);
-    if (user?.id && mergedFor.current !== user.id) {
+    if (preferences.analytics && user?.id && mergedFor.current !== user.id) {
       mergedFor.current = user.id;
       mergeVisitorIntoUser(user.id);
     }
-  }, [user?.id]);
+  }, [preferences.analytics, user?.id]);
 
   // Auto track detail-page views
   useEffect(() => {
+    if (!preferences.analytics) return;
     autoTrackRoute(location.pathname);
     // Auto-track section/anchor hits on college detail (#fees, #placements, #admission, etc.)
     const hash = (location.hash || "").replace("#", "").toLowerCase();
@@ -55,7 +63,7 @@ export function IntentTrackingProvider({ children }: { children: React.ReactNode
       else if (/hostel/.test(hash))      trackIntent("hostel_viewed",            { college_slug: slug });
       else if (/scholarship/.test(hash)) trackIntent("scholarship_viewed",       { college_slug: slug });
     }
-  }, [location.pathname, location.hash]);
+  }, [location.pathname, location.hash, preferences.analytics]);
 
   return <>{children}</>;
 }

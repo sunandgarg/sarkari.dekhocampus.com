@@ -6,6 +6,7 @@ describe("Sarkari homepage layout (static source assertions)", () => {
   const indexSrc = readFileSync(resolve(process.cwd(), "src/pages/Index.tsx"), "utf8");
   const headerSrc = readFileSync(resolve(process.cwd(), "src/components/sarkari/SarkariHeader.tsx"), "utf8");
   const footerSrc = readFileSync(resolve(process.cwd(), "src/components/sarkari/SarkariFooter.tsx"), "utf8");
+  const adSlotSrc = readFileSync(resolve(process.cwd(), "src/components/sarkari/SarkariAdSlot.tsx"), "utf8");
   const carouselSrc = readFileSync(resolve(process.cwd(), "src/components/sarkari/SarkariCarousel.tsx"), "utf8");
   const configSrc = readFileSync(resolve(process.cwd(), "src/lib/constant.ts"), "utf8");
   const stylesSrc = readFileSync(resolve(process.cwd(), "src/index.css"), "utf8");
@@ -108,8 +109,19 @@ describe("Sarkari homepage layout (static source assertions)", () => {
     expect(denseStyles).toMatch(/\.sarkari-trending-card:hover \.sarkari-trending-number[\s\S]*box-shadow:/);
     expect(denseStyles).toMatch(/\.sarkari-update-card:hover \.sarkari-update-number[\s\S]*box-shadow:/);
     expect(denseStyles).toMatch(/\.sarkari-dense-new-label \{[\s\S]*display: inline-flex;/);
+    expect(denseStyles).toMatch(/\.sarkari-trending-number \{[\s\S]*background: hsl\(var\(--destructive\)\);[\s\S]*color: #fff;/);
+    expect(denseStyles).not.toMatch(/(?:linear|radial|conic)-gradient/);
+    expect(denseStyles).toMatch(/\.sarkari-hero h1 em \{[\s\S]*color: #0f172a;/);
     expect(denseStyles).toMatch(/@media \(hover: hover\) and \(pointer: fine\)/);
     expect(denseStyles).not.toMatch(/animation:\s*(?:pulse|bounce|marquee|shimmer)/);
+  });
+
+  it("provides every consent-gated homepage advertising opportunity", () => {
+    for (const position of ["top", "after-latest-jobs", "after-admit-cards", "after-positions", "after-department", "bottom"]) {
+      expect(indexSrc).toContain(`position="${position}"`);
+    }
+    expect(adSlotSrc).toContain("!preferences.resolved || !preferences.marketing");
+    expect(adSlotSrc).toContain('import("@/components/ads/GoogleAd")');
   });
 
   it("keeps the active dense layout centered and fully structured", () => {
