@@ -14,7 +14,7 @@ function contentSecurityPolicy(nonce: string) {
     "object-src 'none'",
     "frame-ancestors 'self'",
     "form-action 'self'",
-    `script-src 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline' https://*.googletagmanager.com https://*.googlesyndication.com https://*.google-analytics.com https://*.doubleclick.net https://*.google.com https://*.gstatic.com https://*.googletagservices.com https://*.googleadservices.com https://*.clarity.ms https://bat.bing.com https://*.hotjar.com https://*.hotjar.io https://connect.facebook.net https://snap.licdn.com https://plausible.io https://static.cloudflareinsights.com`,
+    `script-src 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline' https://*.googletagmanager.com https://*.googlesyndication.com https://*.google-analytics.com https://*.doubleclick.net https://*.google.com https://*.gstatic.com https://*.googletagservices.com https://*.googleadservices.com https://*.adtrafficquality.google https://*.clarity.ms https://bat.bing.com https://*.hotjar.com https://*.hotjar.io https://connect.facebook.net https://snap.licdn.com https://plausible.io https://static.cloudflareinsights.com`,
     "script-src-attr 'none'",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' data: https://fonts.gstatic.com",

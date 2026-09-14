@@ -42,6 +42,7 @@ describe("Sarkari public integrations and secret boundary", () => {
   });
 
   it("keeps static ad-bearing routes on an explicit provider allowlist", () => {
+    const scriptSrc = headers.match(/script-src [^;]+;/)?.[0] || "";
     expect(headers).toContain("script-src 'self' 'unsafe-inline'");
     expect(headers).toContain("script-src-attr 'none'");
     for (const origin of [
@@ -55,6 +56,7 @@ describe("Sarkari public integrations and secret boundary", () => {
       "https://connect.facebook.net",
     ]) expect(headers).toContain(origin);
     expect(headers).not.toContain("'unsafe-eval'");
+    expect(scriptSrc).toContain("https://*.adtrafficquality.google");
     expect(headers).not.toContain("script-src 'self' 'unsafe-inline' https: http:");
     expect(headers).not.toMatch(/connect-src 'self' https:\s+wss:(?:;|\s)/);
     expect(headers).not.toMatch(/frame-src 'self' https:(?:;|\s)/);
