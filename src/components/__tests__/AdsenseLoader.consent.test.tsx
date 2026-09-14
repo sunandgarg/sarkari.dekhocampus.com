@@ -128,14 +128,15 @@ describe("AdsenseLoader consent boundary", () => {
     expect((window as Window & { adsbygoogle?: unknown[] }).adsbygoogle).toHaveLength(1);
   });
 
-  it("uses the site-owned publisher and Auto Ads only for an unconfigured settings row", () => {
+  it("uses the site-owned publisher without a duplicate legacy Auto Ads command", () => {
     mocked.preferences = { ...mocked.preferences, resolved: true, marketing: true };
     render(<Harness />);
     act(() => vi.advanceTimersByTime(5_000));
 
     const library = document.getElementById("adsbygoogle-lib") as HTMLScriptElement | null;
     expect(library?.src).toContain("client=ca-pub-4858806955717066");
-    expect(document.getElementById("adsbygoogle-autoads")?.textContent).toContain("ca-pub-4858806955717066");
+    expect(document.getElementById("adsbygoogle-autoads")).toBeNull();
+    expect(document.head.textContent).not.toContain("enable_page_level_ads");
   });
 
   it("never applies the fallback when ads are explicitly disabled", () => {

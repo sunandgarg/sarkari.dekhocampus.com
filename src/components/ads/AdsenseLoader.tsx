@@ -91,15 +91,10 @@ export function AdsenseLoader() {
       });
     }
 
-    // Auto Ads
-    if (runtime.autoAdsEnabled && runtime.clientId) {
-      const cid = runtime.clientId;
-      addScript(
-        "adsbygoogle-autoads",
-        {},
-        `(adsbygoogle = window.adsbygoogle || []).push({ google_ad_client: "${cid}", enable_page_level_ads: true });`,
-      );
-    }
+    // The modern site-wide AdSense loader above activates Auto Ads according
+    // to the publisher's AdSense configuration. Do not also enqueue the legacy
+    // `enable_page_level_ads` command: Google's loader can process both paths
+    // and reject the duplicate initialization on every navigation.
 
     // Verification meta
     const verificationMeta = settings?.verification_meta?.trim() || runtime.clientId || "";
@@ -158,7 +153,6 @@ export function AdsenseLoader() {
     isAdmin,
     preferences.marketing,
     preferences.resolved,
-    runtime.autoAdsEnabled,
     runtime.clientId,
     runtime.usingFallbackIdentity,
     runtimeEnabled,
