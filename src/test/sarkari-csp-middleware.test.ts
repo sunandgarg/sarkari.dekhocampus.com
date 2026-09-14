@@ -11,6 +11,7 @@ describe("Sarkari Pages CSP middleware", () => {
     });
     const csp = response.headers.get("content-security-policy") || "";
     const scriptSrc = csp.split(";").find((directive) => directive.trim().startsWith("script-src ")) || "";
+    const frameSrc = csp.split(";").find((directive) => directive.trim().startsWith("frame-src ")) || "";
     const nonce = csp.match(/'nonce-([^']+)'/)?.[1];
     expect(nonce).toMatch(/^[a-f0-9]{32}$/);
     expect(csp).toContain("'strict-dynamic'");
@@ -19,6 +20,7 @@ describe("Sarkari Pages CSP middleware", () => {
     expect(csp).toContain("https://*.googlesyndication.com");
     expect(csp).toContain("https://*.adtrafficquality.google");
     expect(scriptSrc).toContain("https://*.adtrafficquality.google");
+    expect(frameSrc).toContain("https://*.adtrafficquality.google");
     expect(csp).not.toMatch(/connect-src 'self' https:\s+wss:(?:;|\s)/);
     expect(csp).not.toMatch(/frame-src 'self' https:(?:;|\s)/);
     expect(csp).toContain("script-src-attr 'none'");
