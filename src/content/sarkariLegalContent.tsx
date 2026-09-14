@@ -6,7 +6,10 @@ import type { SarkariLegalSlug } from "@/lib/sarkariLegal";
 function ContactBlock() {
   return (
     <address className="not-italic">
-      <strong>Privacy &amp; Grievance Desk</strong><br />
+      <strong>DekhoCampus Private Limited</strong><br />
+      CIN: U80902DL2021PTC381778<br />
+      Registered office: RZ 43, Suden Garden, Najafgarh, New Delhi - 110043, India<br />
+      Grievance Officer: Chetan Garg<br />
       Email: <a href={`mailto:${SITE_CONFIG.supportEmail}`}>{SITE_CONFIG.supportEmail}</a><br />
       Phone: <a href={`tel:${SITE_CONFIG.supportPhone}`}>{SITE_CONFIG.supportPhoneDisplay}</a>
     </address>
@@ -31,8 +34,9 @@ const privacyPolicy = (
     <p>
       This Privacy Policy applies to the Sarkari DekhoCampus website, its government job and examination
       information pages, saved-item features, update request forms and related communications. In this policy,
-      "DekhoCampus", "we", "us" and "our" refer to the operator of this service. It does not govern a recruiting
-      authority, government portal, advertiser or other website that you visit through a link from us.
+      "DekhoCampus", "we", "us" and "our" refer to DekhoCampus Private Limited, CIN U80902DL2021PTC381778,
+      the operator of this service. It does not govern a recruiting authority, government portal, advertiser or
+      other website that you visit through a link from us.
     </p>
     <p>
       This is a privacy notice. It does not require you to agree to unrelated marketing, and it does not reduce any
@@ -317,9 +321,10 @@ const termsOfService = (
   <>
     <h2>1. Agreement and scope</h2>
     <p>
-      These Terms of Use apply to Sarkari DekhoCampus and its public information, search, saved-item, update request and
-      related features. By using the service, you agree to these terms to the extent a binding agreement may lawfully
-      be formed. If you do not agree, do not submit a form or continue using an optional feature.
+      These Terms of Use apply to Sarkari DekhoCampus, operated by DekhoCampus Private Limited, CIN
+      U80902DL2021PTC381778, and its public information, search, saved-item, update request and related features. By
+      using the service, you agree to these terms to the extent a binding agreement may lawfully be formed. If you do
+      not agree, do not submit a form or continue using an optional feature.
     </p>
     <p>
       Public information may be read without creating an account. Contact and alert forms are intended for people aged
@@ -437,7 +442,8 @@ const termsOfService = (
     <p>
       These terms are governed by the laws of India. Please contact us first so we can try to resolve a concern. Nothing
       here prevents either party from approaching a court, consumer commission, regulator, data-protection authority or
-      other statutory forum that has jurisdiction under applicable law. No clause requires you to waive a mandatory
+      other statutory forum that has jurisdiction under applicable law. Subject to any mandatory consumer or statutory
+      forum, the competent courts at New Delhi will have jurisdiction. No clause requires you to waive a mandatory
       complaint, appeal or legal remedy.
     </p>
 

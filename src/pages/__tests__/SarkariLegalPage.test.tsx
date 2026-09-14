@@ -49,7 +49,10 @@ describe("Sarkari legal pages", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Privacy & Grievance Desk")).toBeInTheDocument();
+    expect(screen.getByText("DekhoCampus Private Limited")).toBeInTheDocument();
+    expect(screen.getByText(/CIN: U80902DL2021PTC381778/)).toBeInTheDocument();
+    expect(screen.getByText(/Grievance Officer: Chetan Garg/)).toBeInTheDocument();
+    expect(screen.getByText(/Suden Garden, Najafgarh, New Delhi/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "outreach@dekhocampus.com" })).toHaveAttribute(
       "href",
       "mailto:outreach@dekhocampus.com",
