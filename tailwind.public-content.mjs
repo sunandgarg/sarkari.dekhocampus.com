@@ -69,6 +69,7 @@ export const publicContent = [
   "./src/lib/sarkariArticleBootstrap.ts",
   "./src/lib/sarkariCategories.ts",
   "./src/lib/sarkariHomeFeed.ts",
+  "./src/lib/sarkariJobPosting.ts",
   "./src/lib/sarkariLegal.ts",
   "./src/lib/siteScope.ts",
   "./src/lib/twoStepLead.ts",

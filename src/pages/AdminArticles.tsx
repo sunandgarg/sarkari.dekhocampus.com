@@ -38,6 +38,8 @@ import { useDraftState } from "@/hooks/useDraftState";
 import { syncAutoSlug } from "@/lib/slugify";
 import { sarkariCategories } from "@/data/sarkariArticles";
 import { SARKARI_FAQ_PAGE, SARKARI_SITE_SCOPE } from "@/lib/siteScope";
+import { SarkariJobPostingEditor } from "@/components/admin/SarkariJobPostingEditor";
+import { validatePublicJobPosting } from "@/lib/sarkariJobPosting";
 
 const STATUSES = ["Draft", "Published"];
 const VERTICALS = ["Government Updates", "Central Government", "State Government", "Railway", "Banking", "Defence", "Teaching"];
@@ -62,6 +64,7 @@ const emptyArticle: Partial<DbArticle> = {
   slug: "", title: "", description: "", content: "", vertical: "Government Updates", category: "Latest Jobs", author: "Sarkari DekhoCampus Desk",
   featured_image: "", views: 0, tags: [], meta_title: "", meta_description: "", meta_keywords: "",
   is_active: true, status: "Draft",
+  job_posting: null,
 };
 
 const normalizeAdminArticleSearch = (value: unknown) =>
@@ -161,6 +164,14 @@ export default function AdminArticles() {
     if (!editing?.slug || !editing?.title) { toast.error("Slug and Title required"); return; }
     if (editing.status === "Published" && !canPublish) {
       toast.error("You don't have permission to publish. Save as Draft - an editor will review it.");
+      return;
+    }
+    if (editing.job_posting != null && !validatePublicJobPosting(editing.job_posting)) {
+      toast.error("Complete or disable the Google JobPosting fields before saving.");
+      return;
+    }
+    if (editing.job_posting != null && editing.category !== "Latest Jobs") {
+      toast.error("Google JobPosting data is allowed only in the Latest Jobs category.");
       return;
     }
     const rawRank = (editing as any).featured_rank ?? null;
@@ -281,7 +292,7 @@ export default function AdminArticles() {
           columns="*"
           upsertKey="site_scope,slug"
           scope={{ column: "site_scope", value: SARKARI_SITE_SCOPE }}
-          typeHints={{ tags: "array", views: "number", is_active: "boolean" }}
+          typeHints={{ tags: "array", views: "number", is_active: "boolean", job_posting: "json" }}
           onImported={() => { void refetchArticles(); }}
         />
       </div>}
@@ -409,6 +420,10 @@ export default function AdminArticles() {
               {/* ── Content ── */}
               <AdminFormSection title="Content" icon={<FileText className="w-4 h-4 text-primary" />}>
                 <RichTextEditor label="Article Content" value={editing.content || ""} onChange={(v) => update("content", v)} rows={12} />
+              </AdminFormSection>
+
+              <AdminFormSection title="Google JobPosting eligibility" icon={<CheckSquare2 className="w-4 h-4 text-primary" />} defaultOpen={false}>
+                <SarkariJobPostingEditor value={editing.job_posting} onChange={(value) => update("job_posting", value)} />
               </AdminFormSection>
 
               {/* ── Links (multi-category) ── */}

@@ -25,6 +25,7 @@ import { lazyRetry } from "@/lib/lazyRetry";
 import { stripVisibleArticleSources } from "@/lib/articleContentSanitizer";
 import { SARKARI_FAQ_PAGE } from "@/lib/siteScope";
 import { getArticleLoadState } from "@/lib/articleLoadState";
+import { buildJobPostingSchema } from "@/lib/sarkariJobPosting";
 
 // Heavy below-the-fold components - lazy loaded for faster initial paint
 const FAQSection = lazyRetry(() => import("@/components/FAQSection").then(m => ({ default: m.FAQSection })), "FAQSection");
@@ -113,6 +114,7 @@ export default function ArticleDetail() {
         updatedAt: new Date(dbArticle.updated_at || dbArticle.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
         views: dbArticle.views ?? 0,
         tags: dbArticle.tags || [],
+        jobPosting: dbArticle.job_posting,
       };
     }
     return null;
@@ -136,6 +138,13 @@ export default function ArticleDetail() {
       }
     : undefined;
   const articleCanonical = article ? absoluteSiteUrl(`/news/${article.slug}`) : undefined;
+  const jobPostingSchema = article && articleCanonical
+    ? buildJobPostingSchema({
+        canonical: articleCanonical,
+        description: article.content,
+        metadata: article.category === "Latest Jobs" ? article.jobPosting : undefined,
+      })
+    : undefined;
   useSEO({
     enabled: articleLoadState === "ready" || articleLoadState === "not-found",
     title: article ? article.title : "Article",
@@ -176,6 +185,7 @@ export default function ArticleDetail() {
         articleSection: article.category || undefined,
         keywords: article.tags?.length ? article.tags.join(", ") : undefined,
       },
+      ...(jobPostingSchema ? [jobPostingSchema] : []),
       {
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",

@@ -8,6 +8,7 @@ import {
   validatePublicSarkariArticle,
   type PublicSarkariArticle,
 } from "../../src/lib/sarkariArticleBootstrap";
+import { buildJobPostingSchema } from "../../src/lib/sarkariJobPosting";
 import {
   ARTICLE_SHELL_PATH,
   restoreBlockingStylesheetFromHomeCriticalCss,
@@ -102,6 +103,11 @@ export function renderArticleHtml(template: string, inputArticle: ArticleRow) {
     "@type": /\b(?:desk|team|dekhocampus)\b/i.test(author) ? "Organization" : "Person",
     name: author,
   };
+  const jobPostingSchema = buildJobPostingSchema({
+    canonical,
+    description: article.content || article.description || "",
+    metadata: article.category === "Latest Jobs" ? article.job_posting : undefined,
+  });
   const schema = [
     {
       "@context": "https://schema.org",
@@ -125,6 +131,7 @@ export function renderArticleHtml(template: string, inputArticle: ArticleRow) {
       },
       mainEntityOfPage: canonical,
     },
+    ...(jobPostingSchema ? [jobPostingSchema] : []),
     {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",

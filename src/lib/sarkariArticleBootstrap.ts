@@ -4,12 +4,13 @@ import {
   stripVisibleArticleSources,
   stripVisibleSourceBrands,
 } from "./articleContentSanitizer";
+import { validatePublicJobPosting, type PublicJobPostingMetadata } from "./sarkariJobPosting";
 
 export const PUBLIC_ARTICLE_LIST_FIELDS =
   "id,site_scope,status,title,slug,description,vertical,category,author,featured_image,views,tags,is_active,featured_rank,created_at,updated_at";
 
 export const PUBLIC_ARTICLE_DETAIL_FIELDS =
-  `${PUBLIC_ARTICLE_LIST_FIELDS},content,meta_title,meta_description,meta_keywords`;
+  `${PUBLIC_ARTICLE_LIST_FIELDS},content,meta_title,meta_description,meta_keywords,job_posting`;
 
 export const SARKARI_ARTICLE_BOOTSTRAP_ID = "sarkari-article-bootstrap";
 export const SARKARI_ARTICLE_BOOTSTRAP_VERSION = 1 as const;
@@ -32,6 +33,7 @@ export type PublicSarkariArticle = {
   meta_title?: string;
   meta_description?: string;
   meta_keywords?: string;
+  job_posting?: PublicJobPostingMetadata | null;
   author_id?: string | null;
   is_active: boolean;
   featured_rank?: number | null;
@@ -55,6 +57,7 @@ export function sanitizePublicSarkariArticle(article: PublicSarkariArticle): Pub
     meta_title: article.meta_title === undefined ? undefined : stripVisibleSourceBrands(article.meta_title),
     meta_description: article.meta_description === undefined ? undefined : stripVisibleArticleSources(article.meta_description),
     meta_keywords: article.meta_keywords === undefined ? undefined : stripVisibleSourceBrands(article.meta_keywords),
+    job_posting: validatePublicJobPosting(article.job_posting),
   };
 }
 
@@ -115,6 +118,7 @@ export function validatePublicSarkariArticle(value: unknown, expectedSlug: strin
   const metaKeywords = boundedString(value.meta_keywords, 5_000);
   const createdAt = boundedString(value.created_at, 64, true);
   const updatedAt = boundedString(value.updated_at, 64) || createdAt;
+  const jobPosting = validatePublicJobPosting(value.job_posting);
   if (!id || containsBlockedPublicSource(id) || !title || description === undefined || content === undefined || vertical === undefined ||
       category === undefined || author === undefined || featuredImage === undefined || metaTitle === undefined ||
       metaDescription === undefined || metaKeywords === undefined || !createdAt || !updatedAt) return undefined;
@@ -148,6 +152,7 @@ export function validatePublicSarkariArticle(value: unknown, expectedSlug: strin
     meta_title: metaTitle,
     meta_description: metaDescription,
     meta_keywords: metaKeywords,
+    job_posting: jobPosting,
     is_active: true,
     featured_rank: featuredRank,
     created_at: createdAt,

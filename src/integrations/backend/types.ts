@@ -898,6 +898,7 @@ export type Database = {
           featured_rank: number | null
           id: string
           is_active: boolean
+          job_posting: Json | null
           meta_description: string
           meta_keywords: string
           meta_title: string
@@ -922,6 +923,7 @@ export type Database = {
           featured_rank?: number | null
           id?: string
           is_active?: boolean
+          job_posting?: Json | null
           meta_description?: string
           meta_keywords?: string
           meta_title?: string
@@ -946,6 +948,7 @@ export type Database = {
           featured_rank?: number | null
           id?: string
           is_active?: boolean
+          job_posting?: Json | null
           meta_description?: string
           meta_keywords?: string
           meta_title?: string

@@ -124,6 +124,47 @@ describe("Sarkari article Pages Function", () => {
     expect(JSON.parse(schemaText)[0].articleBody).toHaveLength(12_000);
   });
 
+  it("emits JobPosting only from complete verified job metadata", () => {
+    const withJob = renderArticleHtml(template, {
+      ...article,
+      job_posting: {
+        title: "Railway Clerk",
+        datePosted: "2026-09-12",
+        validThrough: "2026-10-12T23:59:59+05:30",
+        hiringOrganization: { name: "Indian Railways", sameAs: "https://indianrailways.gov.in/" },
+        jobLocations: [{ addressCountry: "IN", addressRegion: "Delhi", addressLocality: "New Delhi" }],
+        employmentType: ["FULL_TIME"],
+        identifier: { name: "Indian Railways", value: "RRB-CLERK-2026" },
+        totalJobOpenings: 42,
+      },
+      content: `<h2>Railway Clerk vacancy</h2><p>${"Complete eligibility, selection and official application instructions for candidates. ".repeat(3)}</p>`,
+    });
+    const schema = JSON.parse(withJob.match(/<script id="ld-json-page"[^>]*>([\s\S]*?)<\/script>/)?.[1] || "[]");
+    expect(schema.map((item: { "@type": string }) => item["@type"])).toEqual(["NewsArticle", "JobPosting", "BreadcrumbList"]);
+    expect(schema[1]).toMatchObject({
+      title: "Railway Clerk",
+      totalJobOpenings: 42,
+      hiringOrganization: { name: "Indian Railways" },
+      jobLocation: [{ address: { addressCountry: "IN", addressLocality: "New Delhi" } }],
+    });
+
+    const withoutJob = renderArticleHtml(template, { ...article, job_posting: undefined });
+    expect(withoutJob).not.toContain('"@type":"JobPosting"');
+
+    const nonJobCategory = renderArticleHtml(template, {
+      ...article,
+      category: "Results",
+      job_posting: {
+        title: "Railway Clerk",
+        datePosted: "2026-09-12",
+        validThrough: "2026-10-12T23:59:59+05:30",
+        hiringOrganization: { name: "Indian Railways" },
+        jobLocations: [{ addressCountry: "IN", addressRegion: "Delhi" }],
+      },
+    });
+    expect(nonJobCategory).not.toContain('"@type":"JobPosting"');
+  });
+
   it("strips discovery-source names from metadata, schema, noscript and bootstrap", () => {
     const html = renderArticleHtml(template, {
       ...article,

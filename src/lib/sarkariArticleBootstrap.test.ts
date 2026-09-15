@@ -92,4 +92,13 @@ describe("Sarkari article bootstrap contract", () => {
     expect(validatePublicSarkariArticle({ ...bootstrapArticle, slug: blockedSlug }, blockedSlug)).toBeUndefined();
     expect(validatePublicSarkariArticle({ ...bootstrapArticle, id: "govt-job-guru-card" }, bootstrapArticle.slug)).toBeUndefined();
   });
+
+  it("keeps the article public but omits invalid optional job metadata", () => {
+    const article = validatePublicSarkariArticle({
+      ...bootstrapArticle,
+      job_posting: { title: "Incomplete record" },
+    }, bootstrapArticle.slug);
+    expect(article?.id).toBe(bootstrapArticle.id);
+    expect(article?.job_posting).toBeUndefined();
+  });
 });
