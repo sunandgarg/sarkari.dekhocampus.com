@@ -20,7 +20,10 @@ if (placeholderCount !== 1) {
 
 // Articles use a compact, non-prerendered copy instead of downloading and
 // parsing the larger homepage on every uncached edge request.
-const articleShell = stripHomePrerenderFromHtml(sourceHtml);
+const articleShell = stripHomePrerenderFromHtml(sourceHtml).replace(
+  /<meta\b(?=[^>]*\bname=["']robots["'])[^>]*>/i,
+  '<meta name="robots" content="noindex, nofollow, noarchive">',
+);
 writeFileSync(articleShellPath, articleShell);
 
 const version = JSON.parse(readFileSync(versionPath, "utf8")) as { buildYear?: number };

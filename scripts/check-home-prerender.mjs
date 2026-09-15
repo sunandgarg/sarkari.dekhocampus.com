@@ -81,6 +81,7 @@ const fullCssPath = resolve(root, "dist", stylesheetHref.slice(1));
 requireContract(statSync(fullCssPath).size > criticalRawBytes, "critical CSS did not reduce the full stylesheet");
 
 requireContract(articleShell.includes('<div id="root"></div>'), "article shell root is not empty");
+requireContract(articleShell.includes('<meta name="robots" content="noindex, nofollow, noarchive">'), "article shell robots meta is not noindex");
 requireContract(count(articleShell, "<noscript") === 1, "article shell must retain one crawlable fallback slot");
 requireContract(!articleShell.includes(startMarker) && !articleShell.includes(endMarker), "article shell contains homepage sentinels");
 requireContract(!articleShell.includes(criticalStartMarker) && !articleShell.includes(criticalEndMarker), "article shell contains the homepage CSS gate");
