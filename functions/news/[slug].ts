@@ -98,25 +98,44 @@ export function renderArticleHtml(template: string, inputArticle: ArticleRow) {
   const author = plainText(article.author || "Sarkari DekhoCampus Desk");
   const tags = Array.isArray(article.tags) ? article.tags.map(plainText).filter(Boolean) : [];
   const articleBody = plainText(article.content || article.description || "").slice(0, ARTICLE_BODY_CHAR_LIMIT);
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "NewsArticle",
-    headline: plainText(article.title).slice(0, 220),
-    description: descriptionText,
-    articleBody,
-    image: [image],
-    datePublished: article.created_at || undefined,
-    dateModified: article.updated_at || article.created_at || undefined,
-    articleSection: category,
-    keywords: tags.length ? tags.join(", ") : undefined,
-    author: { "@type": "Person", name: author },
-    publisher: {
-      "@type": "Organization",
-      name: "Sarkari DekhoCampus",
-      logo: { "@type": "ImageObject", url: BRAND_IMAGE, width: 512, height: 512 },
-    },
-    mainEntityOfPage: canonical,
+  const structuredAuthor = {
+    "@type": /\b(?:desk|team|dekhocampus)\b/i.test(author) ? "Organization" : "Person",
+    name: author,
   };
+  const schema = [
+    {
+      "@context": "https://schema.org",
+      "@type": "NewsArticle",
+      "@id": `${canonical}#article`,
+      headline: plainText(article.title).slice(0, 220),
+      description: descriptionText,
+      articleBody,
+      image: [image],
+      datePublished: article.created_at || undefined,
+      dateModified: article.updated_at || article.created_at || undefined,
+      inLanguage: "en-IN",
+      isAccessibleForFree: true,
+      articleSection: category,
+      keywords: tags.length ? tags.join(", ") : undefined,
+      author: structuredAuthor,
+      publisher: {
+        "@type": "Organization",
+        name: "Sarkari DekhoCampus",
+        logo: { "@type": "ImageObject", url: BRAND_IMAGE, width: 512, height: 512 },
+      },
+      mainEntityOfPage: canonical,
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "@id": `${canonical}#breadcrumb`,
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Sarkari DekhoCampus", item: `${SITE_URL}/` },
+        { "@type": "ListItem", position: 2, name: category, item: `${SITE_URL}/` },
+        { "@type": "ListItem", position: 3, name: plainText(article.title), item: canonical },
+      ],
+    },
+  ];
 
   let html = restoreBlockingStylesheetFromHomeCriticalCss(stripHomePrerenderFromHtml(template))
     .replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(titleText)}</title>`);
@@ -124,7 +143,7 @@ export function renderArticleHtml(template: string, inputArticle: ArticleRow) {
   for (const name of ["description", "keywords", "robots", "twitter:card", "twitter:title", "twitter:description", "twitter:url", "twitter:image", "twitter:image:alt"]) {
     html = removeMeta(html, "name", name);
   }
-  for (const property of ["og:type", "og:title", "og:description", "og:url", "og:image", "og:image:alt"]) {
+  for (const property of ["og:type", "og:title", "og:description", "og:url", "og:image", "og:image:alt", "article:published_time", "article:modified_time", "article:section"]) {
     html = removeMeta(html, "property", property);
   }
   html = html.replace(/<script\b[^>]*id=["']ld-json-page["'][^>]*>[\s\S]*?<\/script>\s*/gi, "");
@@ -140,6 +159,9 @@ export function renderArticleHtml(template: string, inputArticle: ArticleRow) {
     `<meta property="og:url" content="${escapeHtml(canonical)}">`,
     `<meta property="og:image" content="${escapeHtml(image)}">`,
     `<meta property="og:image:alt" content="${escapeHtml(imageAlt)}">`,
+    ...(article.created_at ? [`<meta property="article:published_time" content="${escapeHtml(article.created_at)}">`] : []),
+    ...((article.updated_at || article.created_at) ? [`<meta property="article:modified_time" content="${escapeHtml(article.updated_at || article.created_at || "")}">`] : []),
+    `<meta property="article:section" content="${escapeHtml(category)}">`,
     `<meta name="twitter:card" content="${image === BRAND_IMAGE ? "summary" : "summary_large_image"}">`,
     `<meta name="twitter:title" content="${escapeHtml(titleText)}">`,
     `<meta name="twitter:description" content="${escapeHtml(descriptionText)}">`,

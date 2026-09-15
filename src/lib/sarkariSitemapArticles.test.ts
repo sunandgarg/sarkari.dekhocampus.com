@@ -151,23 +151,22 @@ describe("Sarkari article sitemap pagination", () => {
 });
 
 describe("Sarkari sitemap shards", () => {
-  it("always emits root and legal pages, plus only populated category archives", () => {
+  it("emits only stable self-canonical landing pages and gives home an accurate latest update", () => {
     const fixedPaths = ["/", ...SARKARI_LEGAL_PAGES.map((page) => page.path)];
     expect(buildSarkariFixedSitemapEntries([]).map((entry) => entry.path)).toEqual(fixedPaths);
-    expect(buildSarkariFixedSitemapEntries([
+    const entries = buildSarkariFixedSitemapEntries([
       { path: "/news/result", changefreq: "daily", priority: "0.8", category: "Results" },
-      { path: "/news/job", changefreq: "daily", priority: "0.8", category: "Latest Jobs" },
-    ]).map((entry) => entry.path)).toEqual([
-      ...fixedPaths,
-      "/?category=Latest%20Jobs",
-      "/?category=Results",
+      { path: "/news/job", lastmod: "2026-09-16", changefreq: "daily", priority: "0.8", category: "Latest Jobs" },
     ]);
+    expect(entries.map((entry) => entry.path)).toEqual(fixedPaths);
+    expect(entries[0]).toMatchObject({ path: "/", lastmod: "2026-09-16" });
+    expect(entries.some((entry) => entry.path.includes("?"))).toBe(false);
   });
 
   it("keeps every URL and references every bounded shard from the index", () => {
     const entries = [
       { path: "/", changefreq: "hourly", priority: "1.0" },
-      { path: "/?category=Latest%20Jobs", changefreq: "daily", priority: "0.8" },
+      { path: "/legal/privacy-policy", changefreq: "monthly", priority: "0.3" },
       { path: "/news/job-one", lastmod: "2026-09-10" },
       { path: "/news/job-two", lastmod: "2026-09-11" },
       { path: "/news/job-three" },
@@ -182,7 +181,7 @@ describe("Sarkari sitemap shards", () => {
       expect(documents.indexXml).toContain(`https://sarkari.dekhocampus.com/${shard.filename}`);
     }
     expect(documents.shards[0].xml).toContain("https://sarkari.dekhocampus.com/");
-    expect(documents.shards[0].xml).toContain("?category=Latest%20Jobs");
+    expect(documents.shards[0].xml).toContain("/legal/privacy-policy");
     expect(documents.shards.map((shard) => shard.xml).join("\n")).toContain("/news/job-three");
   });
 

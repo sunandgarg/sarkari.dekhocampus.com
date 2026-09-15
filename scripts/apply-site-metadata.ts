@@ -87,8 +87,10 @@ function writeLlms() {
 
 ## Canonical site
 - [${SITE_CONFIG.name}](${SITE_URL})
+- [Expanded machine-readable site guide](${absoluteSiteUrl("/llms-full.txt")})
 
-## Primary public sections
+## Public browse views
+- Browse views help users filter the canonical homepage. Treat the homepage and individual articles as canonical knowledge URLs.
 - [Latest updates](${absoluteSiteUrl("/")})
 - [Latest jobs](${absoluteSiteUrl("/?category=Latest%20Jobs")})
 - [Results](${absoluteSiteUrl("/?category=Results")})

@@ -96,7 +96,20 @@ describe("Sarkari article Pages Function", () => {
 
     const schemaText = html.match(/<script id="ld-json-page"[^>]*>([\s\S]*?)<\/script>/)?.[1] || "{}";
     const schema = JSON.parse(schemaText);
-    expect(schema.articleBody).toBe("Important dates Apply safely.");
+    expect(schema[0]).toMatchObject({
+      "@type": "NewsArticle",
+      articleBody: "Important dates Apply safely.",
+      inLanguage: "en-IN",
+      isAccessibleForFree: true,
+      author: { "@type": "Organization", name: "Sarkari Desk" },
+    });
+    expect(schema[1]).toMatchObject({
+      "@type": "BreadcrumbList",
+      itemListElement: [{ position: 1 }, { position: 2 }, { position: 3 }],
+    });
+    expect(html).toContain('property="article:published_time" content="2026-09-12T00:00:00.000Z"');
+    expect(html).toContain('property="article:modified_time" content="2026-09-12T01:00:00.000Z"');
+    expect(html).toContain('property="article:section" content="Latest Jobs"');
 
     const bootstrapText = html.match(new RegExp(`<script id="${SARKARI_ARTICLE_BOOTSTRAP_ID}"[^>]*>([\\s\\S]*?)<\\/script>`))?.[1] || "";
     expect(bootstrapText).toContain("\\u003cscript>");
@@ -108,7 +121,7 @@ describe("Sarkari article Pages Function", () => {
   it("bounds the sanitized article text exposed to agents and non-JavaScript readers", () => {
     const html = renderArticleHtml(template, { ...article, content: `<p>${"A".repeat(15_000)}</p>` });
     const schemaText = html.match(/<script id="ld-json-page"[^>]*>([\s\S]*?)<\/script>/)?.[1] || "{}";
-    expect(JSON.parse(schemaText).articleBody).toHaveLength(12_000);
+    expect(JSON.parse(schemaText)[0].articleBody).toHaveLength(12_000);
   });
 
   it("strips discovery-source names from metadata, schema, noscript and bootstrap", () => {

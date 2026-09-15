@@ -168,11 +168,11 @@ export default function Index() {
     : activeCategory
       ? `${activeCategory} - Latest Government Updates | Sarkari DekhoCampus`
       : "Sarkari DekhoCampus - Latest Jobs, Results & Admit Cards";
-  const canonicalPath = tagTerm
-    ? `/news/tag/${encodeURIComponent(tagTerm)}`
-    : activeCategory
-      ? `/?category=${encodeURIComponent(activeCategory)}${currentPage > 1 ? `&page=${currentPage}` : ""}`
-      : "/";
+  // Search, tag and category results are useful browse tools, but they reuse
+  // the same client shell and can produce many overlapping URL combinations.
+  // Keep the stable homepage as their canonical and exclude those filter URLs
+  // from indexing until they have distinct server-rendered landing content.
+  const canonicalPath = "/";
 
   const headlineArticles = useMemo(
     () => (homeQuery.data?.latest || []).map(toPortalArticle),
@@ -227,7 +227,7 @@ export default function Index() {
         ogImage={SITE_CONFIG.ogImagePath}
         ogImageAlt="Sarkari DekhoCampus DC logo"
         twitterCard="summary"
-        noIndex={Boolean(searchTerm) || emptyArchive || unsupportedArchiveQuery}
+        noIndex={hasFilters || emptyArchive || unsupportedArchiveQuery}
       />
       <a className="sarkari-skip-link" href="#content">Skip to main content</a>
       <SarkariHeader />

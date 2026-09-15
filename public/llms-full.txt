@@ -5,6 +5,8 @@
 ## Canonical site and navigation
 
 - Home and public archive: https://sarkari.dekhocampus.com/
+- Expanded machine-readable site guide: https://sarkari.dekhocampus.com/llms-full.txt
+- Filter URLs below are functional browse views. Treat the homepage and individual article URLs as canonical knowledge sources.
 - Latest jobs: https://sarkari.dekhocampus.com/?category=Latest%20Jobs
 - Results: https://sarkari.dekhocampus.com/?category=Results
 - Admit cards: https://sarkari.dekhocampus.com/?category=Admit%20Card

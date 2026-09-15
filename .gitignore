@@ -57,6 +57,7 @@ scripts/*
 !scripts/prerender-legal.ts
 !scripts/check-home-prerender.mjs
 !scripts/apply-home-critical-css.mjs
+!scripts/check-search-discovery.mjs
 
 # Editor directories and files
 .vscode/*

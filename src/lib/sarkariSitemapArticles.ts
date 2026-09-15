@@ -98,24 +98,21 @@ function renderUrlSet(baseUrl: string, entries: SitemapEntry[]) {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
 }
 
-/** Includes only category archives that have at least one published article. */
+/** Includes only stable, self-canonical public landing pages. */
 export function buildSarkariFixedSitemapEntries(articleEntries: ArticleSitemapEntry[]): SitemapEntry[] {
-  const activeCategories = new Set(articleEntries.map((entry) => entry.category));
+  const latestArticleDate = articleEntries
+    .map((entry) => entry.lastmod)
+    .filter((value): value is string => Boolean(value))
+    .sort()
+    .at(-1);
   return [
-    { path: "/", changefreq: "hourly", priority: "1.0" },
+    { path: "/", lastmod: latestArticleDate, changefreq: "hourly", priority: "1.0" },
     ...SARKARI_LEGAL_PAGES.map((page) => ({
       path: page.path,
       lastmod: SARKARI_LEGAL_LAST_UPDATED_ISO,
       changefreq: "monthly",
       priority: "0.3",
     })),
-    ...SARKARI_CATEGORIES
-      .filter((category) => activeCategories.has(category))
-      .map((category) => ({
-        path: `/?category=${encodeURIComponent(category)}`,
-        changefreq: "daily",
-        priority: "0.8",
-      })),
   ];
 }
 

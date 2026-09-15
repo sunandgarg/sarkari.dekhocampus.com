@@ -129,6 +129,13 @@ export default function ArticleDetail() {
     : SITE_CONFIG.ogImagePath;
   const usesBrandSeoImage = seoImage === SITE_CONFIG.ogImagePath;
   const articleLoadState = getArticleLoadState(Boolean(article), dbLoading, dbError);
+  const structuredAuthor = article
+    ? {
+        "@type": /\b(?:desk|team|dekhocampus)\b/i.test(article.author || "") ? "Organization" : "Person",
+        name: article.author || "Sarkari DekhoCampus Desk",
+      }
+    : undefined;
+  const articleCanonical = article ? absoluteSiteUrl(`/news/${article.slug}`) : undefined;
   useSEO({
     enabled: articleLoadState === "ready" || articleLoadState === "not-found",
     title: article ? article.title : "Article",
@@ -138,30 +145,48 @@ export default function ArticleDetail() {
     ogImageAlt: usesBrandSeoImage ? "Sarkari DekhoCampus DC logo" : article?.title,
     ogType: "article",
     twitterCard: usesBrandSeoImage ? "summary" : "summary_large_image",
+    articlePublishedTime: dbArticle?.created_at || undefined,
+    articleModifiedTime: dbArticle?.updated_at || dbArticle?.created_at || undefined,
+    articleSection: article?.category || undefined,
     noIndex: articleLoadState === "not-found",
-    jsonLd: article ? {
-      "@context": "https://schema.org",
-      "@type": "NewsArticle",
-      headline: article.title,
-      description: article.excerpt || undefined,
-      image: [absoluteCanonical(seoImage)],
-      datePublished: dbArticle?.created_at || undefined,
-      dateModified: dbArticle?.updated_at || dbArticle?.created_at || undefined,
-      author: { "@type": "Person", name: article.author || "Sarkari DekhoCampus Desk" },
-      publisher: {
-        "@type": "Organization",
-        name: "Sarkari DekhoCampus",
-        logo: {
-          "@type": "ImageObject",
-          url: absoluteSiteUrl(SITE_CONFIG.ogImagePath),
-          width: 512,
-          height: 512,
+    jsonLd: article && articleCanonical ? [
+      {
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        "@id": `${articleCanonical}#article`,
+        headline: article.title,
+        description: article.excerpt || undefined,
+        image: [absoluteCanonical(seoImage)],
+        datePublished: dbArticle?.created_at || undefined,
+        dateModified: dbArticle?.updated_at || dbArticle?.created_at || undefined,
+        inLanguage: "en-IN",
+        isAccessibleForFree: true,
+        author: structuredAuthor,
+        publisher: {
+          "@type": "Organization",
+          name: "Sarkari DekhoCampus",
+          logo: {
+            "@type": "ImageObject",
+            url: absoluteSiteUrl(SITE_CONFIG.ogImagePath),
+            width: 512,
+            height: 512,
+          },
         },
+        mainEntityOfPage: articleCanonical,
+        articleSection: article.category || undefined,
+        keywords: article.tags?.length ? article.tags.join(", ") : undefined,
       },
-      mainEntityOfPage: absoluteSiteUrl(`/news/${article.slug}`),
-      articleSection: article.category || undefined,
-      keywords: article.tags?.length ? article.tags.join(", ") : undefined,
-    } : undefined,
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "@id": `${articleCanonical}#breadcrumb`,
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Sarkari DekhoCampus", item: absoluteSiteUrl("/") },
+          { "@type": "ListItem", position: 2, name: article.category || "Government updates", item: absoluteSiteUrl("/") },
+          { "@type": "ListItem", position: 3, name: article.title, item: articleCanonical },
+        ],
+      },
+    ] : undefined,
   });
 
   useEffect(() => {

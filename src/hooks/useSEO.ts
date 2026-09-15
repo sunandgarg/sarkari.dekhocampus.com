@@ -11,6 +11,9 @@ type SEOOptions = {
   ogType?: string;
   twitterCard?: string;
   jsonLd?: object | object[];
+  articlePublishedTime?: string;
+  articleModifiedTime?: string;
+  articleSection?: string;
   noIndex?: boolean;
   enabled?: boolean;
 };
@@ -25,6 +28,9 @@ export function useSEO({
   ogType = "website",
   twitterCard,
   jsonLd,
+  articlePublishedTime,
+  articleModifiedTime,
+  articleSection,
   noIndex = false,
   enabled = true,
 }: SEOOptions) {
@@ -83,6 +89,9 @@ export function useSEO({
     setPropertyMeta("og:type", ogType);
     setPropertyMeta("og:image", imageUrl);
     setPropertyMeta("og:image:alt", ogImageAlt);
+    setPropertyMeta("article:published_time", articlePublishedTime);
+    setPropertyMeta("article:modified_time", articleModifiedTime);
+    setPropertyMeta("article:section", articleSection);
 
     if (canonicalUrl) {
       let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
@@ -111,5 +120,5 @@ export function useSEO({
       document.getElementById("ld-json-legal")?.remove();
       document.getElementById("ld-json-page")?.remove();
     };
-  }, [title, description, keywords, canonical, ogImage, ogImageAlt, ogType, twitterCard, jsonLdKey, noIndex, enabled]);
+  }, [title, description, keywords, canonical, ogImage, ogImageAlt, ogType, twitterCard, jsonLdKey, articlePublishedTime, articleModifiedTime, articleSection, noIndex, enabled]);
 }

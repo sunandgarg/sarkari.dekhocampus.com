@@ -553,7 +553,7 @@
 .sarkari-footer h2 { color: var(--sarkari-accent); }
 .sarkari-footer p, .sarkari-footer-bottom { color: hsl(var(--primary-foreground) / .76); }
 .sarkari-footer-links a:hover { color: var(--sarkari-accent); }
-.sarkari-update-sections, .sarkari-discovery, .sarkari-about, .sarkari-footer {
+.sarkari-update-sections, .sarkari-discovery, .sarkari-about {
   content-visibility: auto;
   contain-intrinsic-size: auto 640px;
 }
@@ -2763,7 +2763,7 @@
   border: 1px solid hsl(var(--destructive) / .32);
   border-radius: 999px;
   background: hsl(var(--destructive) / .08);
-  color: hsl(var(--destructive));
+  color: #b42318;
   font-size: 9px;
   font-weight: 800;
   line-height: 1;

@@ -109,11 +109,18 @@ describe("Sarkari homepage layout (static source assertions)", () => {
     expect(denseStyles).toMatch(/\.sarkari-trending-card:hover \.sarkari-trending-number[\s\S]*box-shadow:/);
     expect(denseStyles).toMatch(/\.sarkari-update-card:hover \.sarkari-update-number[\s\S]*box-shadow:/);
     expect(denseStyles).toMatch(/\.sarkari-dense-new-label \{[\s\S]*display: inline-flex;/);
+    expect(denseStyles).toMatch(/\.sarkari-dense-new-label \{[\s\S]*color: #b42318;/);
     expect(denseStyles).toMatch(/\.sarkari-trending-number \{[\s\S]*background: hsl\(var\(--destructive\)\);[\s\S]*color: #fff;/);
     expect(denseStyles).not.toMatch(/(?:linear|radial|conic)-gradient/);
     expect(denseStyles).toMatch(/\.sarkari-hero h1 em \{[\s\S]*color: #0f172a;/);
     expect(denseStyles).toMatch(/@media \(hover: hover\) and \(pointer: fine\)/);
     expect(denseStyles).not.toMatch(/animation:\s*(?:pulse|bounce|marquee|shimmer)/);
+  });
+
+  it("keeps duplicate filter views out of the index and the footer contrast computable", () => {
+    expect(indexSrc).toContain('const canonicalPath = "/"');
+    expect(indexSrc).toContain("noIndex={hasFilters || emptyArchive || unsupportedArchiveQuery}");
+    expect(denseStyles).not.toMatch(/\.sarkari-update-sections, \.sarkari-discovery, \.sarkari-about, \.sarkari-footer \{[\s\S]*content-visibility:/);
   });
 
   it("provides every consent-gated homepage advertising opportunity", () => {
